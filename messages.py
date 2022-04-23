@@ -1,3 +1,5 @@
+from utils import VectClock
+
 class Message:
     def __init__(self, who, fromWho, messageType, vectClock, what):
         self.who = who
@@ -5,7 +7,7 @@ class Message:
         self.messageType = messageType
         self.couleur = "blanc"
         self.isPrepost = False
-        self.vectClock = 
+        self.vectClock = vectClock
         self.what = what
 
     def __str__(self):
@@ -13,13 +15,16 @@ class Message:
 
     def toPrepost(self):
         self.isPrepost = True
+    
+    def setcouleur(self, couleur):
+        self.couleur = couleur
 
     @classmethod
     def fromString(cls, s):
         content = s.split('~')
         m = Message(content[0], content[1], content[2], VectClock.from_string(content[5]), content[6])
         m.couleur = content[3]
-        if m.isPrepost = "True":
+        if m.isPrepost == "True":
             m.toPrepost()
         return m
 
@@ -44,4 +49,5 @@ class EtatMessage(BroadcastMessage):
         super().__init__(fromWho, "EtatMessage", vectClock, etat)
 
 class SnapshotRequestMessage(BroadcastMessage):
-    def __init__(self, fromWho, "SnapshotRequestMessage", vectClock, "This is a snapshot request!"):
+    def __init__(self, fromWho, vectClock):
+        super().__init__(fromWho, "SnapshotRequestMessage", vectClock, "This is a snapshot requsupeest!")

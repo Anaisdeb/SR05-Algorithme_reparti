@@ -5,8 +5,8 @@ class VectClock:
         self.tab = tab
 
     def incr(self, otherClock):
-        self.tab[i] += 1
-        for j in range(N):
+        self.tab[self.i] += 1
+        for j in range(self.N):
             self.tab[j] = max(self.tab[j], otherClock.tab[j])
 
     def __str__(self):
