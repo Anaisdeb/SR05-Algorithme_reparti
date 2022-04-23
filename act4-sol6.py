@@ -31,14 +31,14 @@ def lecture(q):
         q.put(MessageFromJson(line))
 
 
-def ecriture(q, lThread):  # écrire message périodique sur stdout
-    while lThread.is_alive():
-        q.put(Message(otherAppID, "test"))
-        time.sleep(2)
+#def ecriture(q, lThread):  # écrire message périodique sur stdout
+#    while lThread.is_alive():
+#        q.put(Message(otherAppID, "test"))
+#        time.sleep(2)
+def ecriture(q, lThread, message):  # écrire message sur stdout
+    q.put(message)
 
 
-# arrivée d'un message => ajouter événement message en tête de file
-# travail à faire => ajouter événement travail en tête de file
 def centurion(q, lThread, eThread):
     while not (q.empty()) or (lThread.is_alive() and eThread.is_alive()):
         # lire événement en tête de file /* lecture bloquante */
@@ -50,10 +50,10 @@ def centurion(q, lThread, eThread):
 
 
 if __name__ == "__main__":
-    evts = queue.Queue(maxsize=0)
-    lectureThread = threading.Thread(target=lecture, args=(evts,))
-    ecritureThread = threading.Thread(target=ecriture, args=(evts, lectureThread))
-    c = threading.Thread(target=centurion, args=(evts, lectureThread, ecritureThread))
+    messages = queue.Queue(maxsize=0)
+    lectureThread = threading.Thread(target=lecture, args=(messages,))
+    ecritureThread = threading.Thread(target=ecriture, args=(messages, lectureThread))
+    c = threading.Thread(target=centurion, args=(messages, lectureThread, ecritureThread))
     lectureThread.start()
     ecritureThread.start()
     c.start()
