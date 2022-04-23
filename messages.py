@@ -1,3 +1,4 @@
+import sys
 from utils import VectClock
 
 class Message:
@@ -22,9 +23,10 @@ class Message:
     @classmethod
     def fromString(cls, s):
         content = s.split('~')
+        print(content, file=sys.stderr, flush=True)
         m = Message(content[0], content[1], content[2], VectClock.from_string(content[5]), content[6])
         m.couleur = content[3]
-        if m.isPrepost == "True":
+        if content[4] == "True":
             m.toPrepost()
         return m
 
