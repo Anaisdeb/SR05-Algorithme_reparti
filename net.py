@@ -3,28 +3,49 @@ import sys
 import copy
 import threading
 import queue
-import json
-from utils import VectClock, Etat
-from messages import Message, BroadcastMessage, LockRequestMessage, AckMessage, ReleaseMessage, EtatMessage, SnapshotRequestMessage
+from utils import State
+from messages import (
+    Message,
+    BroadcastMessage,
+    LockRequestMessage,
+    AckMessage,
+    ReleaseMessage,
+    EtatMessage,
+    SnapshotRequestMessage
+)
 
 appID = sys.argv[1]
 nbSite = 3
+
+""" Class
+    Net
+    
+    attribute: 
+        - netID: ID of the netSite,
+        - nbSite: number of Site in the netword
+        - color: color of the netSite (white, red)
+        - initiatorSave: is this netSite the initiator 
+        - messageAssess: Balance sheet of message in traffic,
+        - globalState : global state of the network, according to this netSite
+        - nbWaitingMessage: number of waiting message for this netSite
+        - nbWaitingState: number of waiting state for this netSite
+"""
 
 
 class Net:
     def __init__(self, netID, nbSite):
         self.netID = netID
         self.nbSite = nbSite
-        self.couleur = "blanc"
-        self.initiateurSave = False
-        self.bilanMessage = 0
+        self.color = "blanc"
+        self.initiatorSave = False
+        self.messageAssess = 0
         self.etatGlobal = list()
         self.nbMessageAttendu = 0
         self.nbEtatAttendu = 0
         self.messages = queue.Queue(maxsize=0)
         self.lectureThread = threading.Thread(target=self.lecture)
         self.c = threading.Thread(target=self.centurion)
-        self.etat = Etat(self.netID, self.nbSite, self.bilanMessage)
+        self.etat = State(self.netID, self.nbSite, self.messageAssess)
 
     def lecture(self):
         for line in sys.stdin:
@@ -52,19 +73,19 @@ class Net:
 
     def initSauvegarde(self):
         print("Initialisation de la sauvegarde", file=sys.stderr, flush=True)
-        self.couleur = "rouge"
-        self.initiateurSave = True
+        self.color = "rouge"
+        self.initiatorSave = True
         self.etatGlobal.append(copy.deepcopy(self.etat))
         self.nbEtatAttendu = self.nbSite - 1
-        self.nbMessageAttendu = self.bilanMessage
+        self.nbMessageAttendu = self.messageAssess
         request = SnapshotRequestMessage(self.netID, self.etat.vectClock)
-        request.setcouleur("rouge")
+        request.setColor("rouge")
         self.ecriture(request)
 
     def envoiMessageDeBase(self, message):
         print("Envoi message provenant de base", file=sys.stderr, flush=True)
-        message.setcouleur(self.couleur)
-        self.bilanMessage += 1
+        message.setcolor(self.color)
+        self.messageAssess += 1
         self.ecriture(message)
 
 # =============================================================================
@@ -80,8 +101,8 @@ class Net:
         self.etat.vectClock.incr(m.vectClock)
         if m.messageType == "EtatMessage":
             print("Réception message extérieur ETAT", file=sys.stderr, flush=True)
-            if self.initiateurSave:
-                etatDistant = Etat.from_string(m.what)
+            if self.initiatorSave:
+                etatDistant = State.fromString(m.what)
                 self.etatGlobal.append(etatDistant)
                 self.nbEtatAttendu -= 1
                 self.nbMessageAttendu += etatDistant.bilan
@@ -97,7 +118,7 @@ class Net:
             #     self.ecriture(m)
         elif m.isPrepost:
             print("Réception message extérieur PREPOST", file=sys.stderr, flush=True)
-            if self.initiateurSave:
+            if self.initiatorSave:
                 self.nbMessageAttendu -= 1
                 print(m.contenu, file=sys.stderr, flush=True)
                 self.etatGlobal.extend(m)
@@ -111,13 +132,13 @@ class Net:
             print("Réception message extérieur NORMAL", file=sys.stderr, flush=True)
             # TODO, Faire la réception de message
             print(m, file=sys.stderr, flush=True)
-            self.bilanMessage -= 1
-            if m.couleur == "rouge" and self.couleur == "blanc":
+            self.messageAssess -= 1
+            if m.color == "rouge" and self.color == "blanc":
                 print("Passage en mode sauvegarde", file=sys.stderr, flush=True)
-                self.couleur = "rouge"
+                self.color = "rouge"
                 self.etatGlobal.append(self.etat)
                 self.ecriture(EtatMessage(self.netID, self.etat.vectClock, self.etat))    
-            if m.couleur == "blanc" and self.couleur == "rouge":
+            if m.color == "blanc" and self.color == "rouge":
                 print("Passage au Prepost", file=sys.stderr, flush=True)
                 self.envoiMessageExterieur(m.toPrepost())
   
@@ -126,6 +147,7 @@ class Net:
         self.c.start()
         self.lectureThread.join()
         self.c.join()
+
 
 if __name__ == "__main__":
     net = Net(appID, nbSite)
