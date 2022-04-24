@@ -10,7 +10,7 @@ from messages import (
     LockRequestMessage,
     AckMessage,
     ReleaseMessage,
-    EtatMessage,
+    StateMessage,
     SnapshotRequestMessage
 )
 
@@ -18,18 +18,23 @@ appID = sys.argv[1]
 nbSite = 3
 
 """ Class
-    Net
+    Net: class that represents netSites
     
     attribute: 
         - netID: ID of the netSite,
-        - nbSite: number of Site in the netword
-        - color: color of the netSite (white, red)
-        - initiatorSave: is this netSite the initiator 
+        - nbSite: number of Site in the netword,
+        - color: color of the netSite (white, red),
+        - initiatorSave: is this netSite the initiator, 
         - messageAssess: Balance sheet of message in traffic,
-        - globalState : global state of the network, according to this netSite
-        - nbWaitingMessage: number of waiting message for this netSite
-        - nbWaitingState: number of waiting state for this netSite
+        - globalState : global state of the network, according to this netSite,
+        - nbWaitingMessage: number of messages waited by this netSite,
+        - nbWaitingState: number of states waited by this netSite,
+        - messages: Queue containing messages waiting to be processed,
+        - readMessageThread: thread that run readMessage(),
+        - centurionThread: thread that run centurion(),
+        - state: state of the netSite,
 """
+
 
 class Net:
     def __init__(self, netID, nbSite):
@@ -39,185 +44,225 @@ class Net:
         self.networkState = {}
         for i in range(self.nbSite):
             self.networkState[i] = ('L', 0)
-        self.color = "blanc"
+        self.color = "white"
         self.initiatorSave = False
         self.messageAssess = 0
-        self.etatGlobal = list()
-        self.nbMessageAttendu = 0
-        self.nbEtatAttendu = 0
+        self.globalState = list()
+        self.nbWaitingMessage = 0
+        self.nbWaitingState = 0
         self.messages = queue.Queue(maxsize=0)
-        self.lectureThread = threading.Thread(target=self.lecture)
-        self.c = threading.Thread(target=self.centurion)
-        self.etat = State(self.netID, self.nbSite, self.messageAssess)
+        self.readMessageThread = threading.Thread(target=self.readMessage)
+        self.centurionThread = threading.Thread(target=self.centurion)
+        self.state = State(self.netID, self.nbSite, self.messageAssess)
 
-    def logger(self, s):
-        print(f"From site {self.netID}: {s}", file=sys.stderr, flush=True)
-        
-    def lecture(self):
+    '''
+        logger(self, logContent) --> print logContent in stderr with flush option,
+    '''
+    def logger(self, logContent):
+        print(f"From site {self.netID}: {logContent}", file=sys.stderr, flush=True)
+
+    '''
+        readMessage(self) --> read lines from stdin and put them into message Queue, in order to be processed, 
+    '''
+    def readMessage(self):
         try:
             for line in sys.stdin:
                 if line != "\n":
-                    m = Message.fromString(line)
-                    self.messages.put(("traiter", m))
+                    readMessage = Message.fromString(line)
+                    self.messages.put(("process", readMessage))
         except IOError:
-            self.logger("Fin de stdin")
+            self.logger("End of stdin")
 
-    def ecriture(self, message):  # écrire message sur stdout
-        self.messages.put(("ecrire", message))
+    '''
+        writeMessage(self, message) --> put message into message Queue, in order to be sent,
+    '''
+    def writeMessage(self, message):  # écrire message sur stdout
+        self.messages.put(("send", message))
 
+    '''
+        centurion(self) --> process every message in queue : 
+            if "send" --> send message to the next neighbour
+            if "process" --> process the message if it concerns this netSite
+    '''
     def centurion(self):
-        while not(self.messages.empty()) or self.lectureThread.is_alive():
+        while not(self.messages.empty()) or self.readMessageThread.is_alive():
             # lire événement en tête de file /* lecture bloquante */
             item = self.messages.get()
-            if item[0] == "ecrire":
-                self.logger(f"Le centurion diffuse le message {item[1]} sur l'anneau")
+            if item[0] == "send":
+                self.logger(f"The centurion spreads {item[1]} in the Ring")
                 print(item[1], file=sys.stdout, flush=True)
-            elif item[0] == "traiter":
+            elif item[0] == "process":
                 message = item[1]
                 if str(message.who) == str(self.netID):
-                    self.logger(f"Le centurion traite le message {item[1]}")
-                    self.receptionMessageExterieur(message)
+                    self.logger(f"The centurion processes  {item[1]}")
+                    self.receiveExternalMessage(message)
                 elif str(message.who) == "ALL" and str(message.fromWho) != str(self.netID):
-                    self.logger(f"Le centurion traite et diffuse le message {item[1]} sur l'anneau")
+                    self.logger(f"The centurion process and spreads {item[1]} on the Ring")
                     print(message, file=sys.stdout, flush=True)
-                    self.receptionMessageExterieur(message)
+                    self.receiveExternalMessage(message)
                 else:
-                    self.logger(f"Le centurion diffuse le message {item[1]} sur l'anneau")
+                    self.logger(f"The centurion spreads {item[1]} on the Ring")
                     print(message, file=sys.stdout, flush=True)
 
-    def initSauvegarde(self):
-        self.logger("Initialisation de la sauvegarde")
-        self.color = "rouge"
+    '''
+        initSnapshot(self) --> 
+            initialize snapshot on the netSite concerned, and send request to neighbours in the network
+    '''
+    def initSnapshot(self):
+        self.logger("Initialize snapshot")
+        self.color = "red"
         self.initiatorSave = True
-        self.etatGlobal.append(copy.deepcopy(self.etat))
-        self.nbEtatAttendu = self.nbSite - 1
-        self.nbMessageAttendu = self.messageAssess
-        request = SnapshotRequestMessage(self.netID, self.etat.vectClock)
-        request.setColor("rouge")
-        self.ecriture(request)
+        self.globalState.append(copy.deepcopy(self.state))
+        self.nbWaitingState = self.nbSite - 1
+        self.nbWaitingMessage = self.messageAssess
+        request = SnapshotRequestMessage(self.netID, self.state.vectClock)
+        request.setColor("red")
+        self.writeMessage(request)
 
-    def envoiMessageDeBase(self, message):
-        print("Envoi message provenant de base", file=sys.stderr, flush=True)
+    '''
+        sendMessageFromBas(self, message) --> spread message received from BAS
+    '''
+    def sendMessageFromBas(self, message):
+        self.logger("Send message received from BAS")
         message.setcolor(self.color)
         self.messageAssess += 1
-        self.ecriture(message)
+        self.writeMessage(message)
 
-    def envoiABase(self, message):
-        self.logger(f"{self.netID} envoie {message} à BASE")
-        
-    def bas_sc_request(self):
-        # NET reçoit une demande de section critique de l'application BAS
+    '''
+        sendToBas(self, message) --> send message to BAS (TODO)
+    '''
+    def sendToBas(self, message):
+        self.logger(f"{self.netID} send {message} to BAS")
+
+    '''
+        basCsRequest(self) --> send Critical Section request message to the network
+    '''
+    def basCsRequest(self):
         self.stamp += 1
-        msg = LockRequestMessage(self.netID, self.etat.vectClock, self.stamp)
+        msg = LockRequestMessage(self.netID, self.state.vectClock, self.stamp)
         self.networkState[self.netID] = ('R', self.stamp)
-        self.ecriture(msg)
+        self.writeMessage(msg)
 
-    def bas_sc_release(self):
-        # NET reçoit une fin de section critique de l'application BAS
+    '''
+        basCsRelease(self) --> send Critical Section release message to the network
+    '''
+    def basCsRelease(self):
         self.stamp += 1
-        msg = ReleaseMessage(self.netID, self.etat.vectClock, self.stamp)
+        msg = ReleaseMessage(self.netID, self.state.vectClock, self.stamp)
         self.networkState[self.netID] = ('L', self.stamp)
-        self.ecriture(msg)
+        self.writeMessage(msg)
         
-    def status_check(self):
-        site_status = self.networkState[self.netID][0]
-        # Si le site est en demande de section critique
-        if site_status == 'R':
-            # Le site dont la requête est la plus ancienne dans le réseau
-            smallest_site_req = min(self.networkState, key=lambda k: self.networkState[k][1])
-            # S'il est le site qui a la plus petite estampille
-            if smallest_site_req == self.netID:
-                # Ce site peut entrer en section critique
-                self.sc_entry()
-                
-    def sc_entry(self):
-        # Le site entre en section critique
+    '''
+        checkState(self) --> check if netSite's state allows itself to enter in Critical Section, i.e.
+            - Site is requesting for getting Critical Section access,
+            - Site's request is the oldest done,
+    '''
+    def checkState(self):
+        siteState = self.networkState[self.netID][0]
+        if siteState == 'R':
+            oldestCsRequest = min(self.networkState, key=lambda k: self.networkState[k][1])
+            if oldestCsRequest == self.netID:
+                self.enterCs()
+
+    '''
+        enterCs(self) --> Enter into Critical Section, then send release message to the network
+    '''
+    def enterCs(self):
         self.logger("Entrée en section critique")
         # TODO : NET envoie à BAS l'autorisation d'entrer
-        # Le site libère la section critique
-        self.bas_sc_release()
+        self.basCsRelease()
 
-    def receptionMessageExterieur(self, m):
-        self.etat.vectClock.incr(m.vectClock)
-        if m.messageType == "EtatMessage":
-            self.logger("Réception message extérieur ETAT")
+    '''
+        receiveExternalMessage(self, m) --> receive message from network, and act according to the type :
+            - stateMessage:  if netSite is the initiator of the snapshot, if it's the last remaining message, 
+                             finish snapshot and write it into a file
+                             if it's not the initiator, transmit it to next neighbor 
+            - LockRequestMessage: save Request into networkState, send an ACK, then check state of the netSite
+            - ReleaseMessage: release Request in networkState, then check state of the netSite,
+            - AckMessage: if any Request is registered for this source, save the ACK into networkState, the check state,
+            - normal message with "isPrepost" at True : same as State Message
+            - normal message: if message is red and netSite white, turn netSite into red and turn into SNAPSHOT mode,
+                              if message is white and netsite red, pass into PREPOST mode
+    '''
+    def receiveExternalMessage(self, msgReceived):
+        self.state.vectClock.incr(msgReceived.vectClock)
+        if msgReceived.messageType == "StateMessage":
+            self.logger("Receive STATE message")
             if self.initiatorSave:
-                etatDistant = State.fromString(m.what)
-                self.etatGlobal.append(etatDistant)
-                self.nbEtatAttendu -= 1
-                self.nbMessageAttendu += etatDistant.messageAssess
-                if self.nbMessageAttendu == 0 and self.nbEtatAttendu == 0:
-                    self.logger("terminaison de la sauvegarde")
+                etatDistant = State.fromString(msgReceived.what)
+                self.globalState.append(etatDistant)
+                self.nbWaitingState -= 1
+                self.nbWaitingMessage += etatDistant.messageAssess
+                if self.nbWaitingMessage == 0 and self.nbWaitingState == 0:
+                    self.logger("Finishing snapshot")
                     with open("save.txt", "w") as fic:
-                        for etat in self.etatGlobal:
+                        for etat in self.globalState:
                             fic.write(str(etat) + "\n")
                     exit(0)
             else:
-                self.logger("réception d'un message etat mais on est pas initiateur, renvoie")
-                self.ecriture(m)
-        elif m.messageType == "LockRequestMessage":
-            # NET reçoit un message de type requête d'une autre application
-            fromWhoStamp = m.what
+                self.logger("Received STATE message, not initiator, resend it")
+                self.writeMessage(msgReceived)
+        elif msgReceived.messageType == "LockRequestMessage":
+            self.logger("Receive LOCK REQUEST message")
+            fromWhoStamp = msgReceived.what
             self.stamp = max(self.stamp, fromWhoStamp) + 1
-            self.networkState[m.fromWho] = ('R', fromWhoStamp)
-            # Envoie accusé au site demandeur
-            ackMessage = AckMessage(m.fromWho, self.netID, self.etat.vectClock, self.stamp)
-            self.ecriture(ackMessage)
-            # Vérification de l'état d'une éventuelle demande du site
-            self.status_check()
-        elif m.messageType == "ReleaseMessage":
-            # NET reçoit un message de type libération d'une autre application
-            fromWhoStamp = m.what
+            self.networkState[msgReceived.fromWho] = ('R', fromWhoStamp)
+            ackMessage = AckMessage(msgReceived.fromWho, self.netID, self.state.vectClock, self.stamp)
+            self.writeMessage(ackMessage)
+            self.checkState()
+        elif msgReceived.messageType == "ReleaseMessage":
+            self.logger("Receive Release message")
+            fromWhoStamp = msgReceived.what
             self.stamp = max(self.stamp, fromWhoStamp) + 1
-            self.networkState[m.fromWho] = ('L', fromWhoStamp)
-            # Vérification de l'état d'une éventuelle demande du site
-            self.status_check()
-        elif m.messageType == "AckMessage":
-            # NET reçoit un message de type accusé d'une autre application
-            fromWhoStamp = m.what
+            self.networkState[msgReceived.fromWho] = ('L', fromWhoStamp)
+            self.checkState()
+        elif msgReceived.messageType == "AckMessage":
+            self.logger("Receive ACK message")
+            fromWhoStamp = msgReceived.what
             self.stamp = max(self.stamp, fromWhoStamp) + 1
-            # On n’écrase pas la date d’une requête par celle d’un accusé
-            if self.networkState[m.fromWho][0] != 'R':
-                self.networkState[m.fromWho] = ('A', m.fromWhoStamp)
-            # Vérification de l'état d'une éventuelle demande du site
-            self.status_check()
-        elif m.isPrepost:
-            self.logger("Réception message extérieur PREPOST")
+            if self.networkState[msgReceived.fromWho][0] != 'R':
+                self.networkState[msgReceived.fromWho] = ('A', msgReceived.fromWhoStamp)
+            self.checkState()
+        elif msgReceived.isPrepost:
+            self.logger("Receive PREPOST message")
             if self.initiatorSave:
-                self.nbMessageAttendu -= 1
-                self.logger(m.contenu)
-                self.etatGlobal.extend(m)
-                if self.nbMessageAttendu == 0 and self.nbEtatAttendu == 0:
-                    self.logger("terminaison de la sauvegarde")
+                self.nbWaitingMessage -= 1
+                self.logger(msgReceived.contenu)
+                self.globalState.extend(msgReceived)
+                if self.nbWaitingMessage == 0 and self.nbWaitingState == 0:
+                    self.logger("Finishing snapshot")
                     with open("save.txt", "w") as fic:
-                        for etat in self.etatGlobal:
+                        for etat in self.globalState:
                             fic.write(str(etat) + "\n")
                     exit(0)
             else:
-                self.logger("réception d'un message prepost mais on est pas initiateur, renvoie")
-                self.ecriture(m)
+                self.logger("Received PREPOST message, not initiator, resend it")
+                self.writeMessage(msgReceived)
         else:
-            self.logger("Réception message extérieur NORMAL")
-            # TODO, Faire la réception de message
+            self.logger("Receive NORMAL message")
+            # TODO, implement message Reception
             self.messageAssess -= 1
-            if m.color == "rouge" and self.color == "blanc":
-                self.logger("Passage en mode sauvegarde")
-                self.color = "rouge"
-                self.etatGlobal.append(self.etat)
-                self.ecriture(EtatMessage(self.netID, self.etat.vectClock, self.etat))    
-            if m.color == "blanc" and self.color == "rouge":
-                self.logger("Passage au Prepost")
-                self.ecriture(m.toPrepost())
-  
+            if msgReceived.color == "red" and self.color == "white":
+                self.logger("Enter into SNAPSHOT mode")
+                self.color = "red"
+                self.globalState.append(self.state)
+                self.writeMessage(StateMessage(self.netID, self.state.vectClock, self.state))
+            if msgReceived.color == "white" and self.color == "red":
+                self.logger("switch into PREPOST")
+                self.writeMessage(msgReceived.toPrepost())
+
+    '''
+        run(self) --> Run every thread initialized in __init__(self)
+    '''
     def run(self):
-        self.lectureThread.start()
-        self.c.start()
-        self.lectureThread.join()
-        self.c.join()
+        self.readMessageThread.start()
+        self.centurionThread.start()
+        self.readMessageThread.join()
+        self.centurionThread.join()
 
 
 if __name__ == "__main__":
     net = Net(appID, nbSite)
     if int(appID) == 2:
-        net.initSauvegarde()
+        net.initSnapshot()
     net.run()

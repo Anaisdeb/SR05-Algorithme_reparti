@@ -14,7 +14,12 @@
 
 
 class VectClock:
-    def __init__(self, netId, nbSite, clockArray):
+    def __init__(
+            self,
+            netId,
+            nbSite,
+            clockArray
+    ):
         self.netId = int(netId)
         self.nbSite = int(nbSite)
         self.clockArray = clockArray
@@ -22,16 +27,25 @@ class VectClock:
     def incr(self, otherClock):
         self.clockArray[self.netId] += 1
         for site in range(self.nbSite):
-            self.clockArray[site] = max(int(self.clockArray[site]), int(otherClock.clockArray[site]))
+            self.clockArray[site] = max(
+                int(self.clockArray[site]),
+                int(otherClock.clockArray[site])
+            )
 
     def __str__(self):
         strClockArray = "#".join(map(str, self.clockArray))
-        return f"{self.netId}#{self.nbSite}#{strClockArray}"
+        return f"{self.netId}#" \
+               f"{self.nbSite}#" \
+               f"{strClockArray}"
 
     @classmethod
     def fromString(cls, stringToConvert):
         clockContent = stringToConvert.split("#")
-        return VectClock(clockContent[0], clockContent[1], clockContent[2:])
+        return VectClock(
+            clockContent[0],
+            clockContent[1],
+            clockContent[2:]
+        )
 
 
 """ Class
@@ -50,19 +64,35 @@ class VectClock:
 
 
 class State:
-    def __init__(self, netID, nbSite, messageAssess=0):
+    def __init__(
+            self,
+            netID,
+            nbSite,
+            messageAssess=0
+    ):
         self.messageAssess = int(messageAssess)
         self.netID = int(netID)
         self.nbSite = int(nbSite)
         tab = [0 for x in range(self.nbSite)]
-        self.vectClock = VectClock(netID, nbSite, tab)
+        self.vectClock = VectClock(
+            netID,
+            nbSite,
+            tab
+        )
 
     def __str__(self):
-        return f"{self.netID}°{self.nbSite}°{self.messageAssess}°{self.vectClock}"
+        return f"{self.netID}°" \
+               f"{self.nbSite}°" \
+               f"{self.messageAssess}°" \
+               f"{self.vectClock}"
 
     @classmethod
     def fromString(cls, stringToConvert):
         stateContent = stringToConvert.split("°")
-        state = State(stateContent[0], stateContent[1], stateContent[2])
+        state = State(
+            stateContent[0],
+            stateContent[1],
+            stateContent[2]
+        )
         state.vectClock = VectClock.fromString(stateContent[3])
         return state
