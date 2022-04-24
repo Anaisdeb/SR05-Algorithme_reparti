@@ -133,7 +133,7 @@ class Net:
                     exit(0)
             else:
                 self.logger("réception d'un message prepost mais on est pas initiateur, renvoie")
-                self.envoiMessageExterieur(m)
+                self.ecriture(m)
         else:
             self.logger("Réception message extérieur NORMAL")
             # TODO, Faire la réception de message
@@ -145,7 +145,7 @@ class Net:
                 self.ecriture(EtatMessage(self.netID, self.etat.vectClock, self.etat))    
             if m.color == "blanc" and self.color == "rouge":
                 self.logger("Passage au Prepost")
-                self.envoiMessageExterieur(m.toPrepost())
+                self.ecriture(m.toPrepost())
   
     def run(self):
         self.lectureThread.start()

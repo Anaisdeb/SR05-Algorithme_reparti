@@ -21,6 +21,7 @@ class Message:
 
     def toPrepost(self):
         self.isPrepost = True
+        return self
     
     def setColor(self, color):
         self.color = color
