@@ -33,8 +33,12 @@ nbSite = 3
 
 class Net:
     def __init__(self, netID, nbSite):
-        self.netID = netID
+        self.netID = int(netID)
         self.nbSite = nbSite
+        self.stamp = 0
+        self.networkState = {}
+        for i in range(self.nbSite):
+            self.networkState[i] = ('L', 0)
         self.color = "blanc"
         self.initiatorSave = False
         self.messageAssess = 0
@@ -100,6 +104,38 @@ class Net:
 
     def envoiABase(self, message):
         self.logger(f"{self.netID} envoie {message} à BASE")
+        
+    def bas_sc_request(self):
+        # NET reçoit une demande de section critique de l'application BAS
+        self.stamp += 1
+        msg = LockRequestMessage(self.netID, self.etat.vectClock, self.stamp)
+        self.networkState[self.netID] = ('R', self.stamp)
+        self.ecriture(msg)
+
+    def bas_sc_release(self):
+        # NET reçoit une fin de section critique de l'application BAS
+        self.stamp += 1
+        msg = ReleaseMessage(self.netID, self.etat.vectClock, self.stamp)
+        self.networkState[self.netID] = ('L', self.stamp)
+        self.ecriture(msg)
+        
+    def status_check(self):
+        site_status = self.networkState[self.netID][0]
+        # Si le site est en demande de section critique
+        if site_status == 'R':
+            # Le site dont la requête est la plus ancienne dans le réseau
+            smallest_site_req = min(self.networkState, key=lambda k: self.networkState[k][1])
+            # S'il est le site qui a la plus petite estampille
+            if smallest_site_req == self.netID:
+                # Ce site peut entrer en section critique
+                self.sc_entry()
+                
+    def sc_entry(self):
+        # Le site entre en section critique
+        self.logger("Entrée en section critique")
+        # TODO : NET envoie à BAS l'autorisation d'entrer
+        # Le site libère la section critique
+        self.bas_sc_release()
 
     def receptionMessageExterieur(self, m):
         self.etat.vectClock.incr(m.vectClock)
@@ -116,9 +152,12 @@ class Net:
                         for etat in self.etatGlobal:
                             fic.write(str(etat) + "\n")
                     exit(0)
-            # else:
-            #     print("réception d'un message état mais on est pas initiateur, renvoie", file=sys.stderr, flush=True)
-            #     self.ecriture(m)
+        elif m.messageType == "LockRequestMessage":
+            #todo
+        elif m.messageType == "ReleaseMessage":
+            #todo
+        elif m.messageType == "AckMessage":
+            #todo
         elif m.isPrepost:
             self.logger("Réception message extérieur PREPOST")
             if self.initiatorSave:
