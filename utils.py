@@ -22,7 +22,7 @@ class VectClock:
     def incr(self, otherClock):
         self.clockArray[self.netId] += 1
         for site in range(self.nbSite):
-            self.clockArray[site] = max(int(self.clockArray[site]), int(otherClock.tab[site]))
+            self.clockArray[site] = max(int(self.clockArray[site]), int(otherClock.clockArray[site]))
 
     def __str__(self):
         strClockArray = "#".join(map(str, self.clockArray))

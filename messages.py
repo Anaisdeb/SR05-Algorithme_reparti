@@ -28,7 +28,6 @@ class Message:
     @classmethod
     def fromString(cls, s):
         content = s.split('~')
-        print(content, file=sys.stderr, flush=True)
         m = Message(content[0], content[1], content[2], VectClock.fromString(content[5]), content[6])
         m.color = content[3]
         if content[4] == "True":
