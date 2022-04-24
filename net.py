@@ -152,12 +152,35 @@ class Net:
                         for etat in self.etatGlobal:
                             fic.write(str(etat) + "\n")
                     exit(0)
+            else:
+                self.logger("réception d'un message etat mais on est pas initiateur, renvoie")
+                self.ecriture(m)
         elif m.messageType == "LockRequestMessage":
-            #todo
+            # NET reçoit un message de type requête d'une autre application
+            fromWhoStamp = m.what
+            self.stamp = max(self.stamp, fromWhoStamp) + 1
+            self.networkState[m.fromWho] = ('R', fromWhoStamp)
+            # Envoie accusé au site demandeur
+            ackMessage = AckMessage(m.fromWho, self.netID, self.etat.vectClock, self.stamp)
+            self.ecriture(ackMessage)
+            # Vérification de l'état d'une éventuelle demande du site
+            self.status_check()
         elif m.messageType == "ReleaseMessage":
-            #todo
+            # NET reçoit un message de type libération d'une autre application
+            fromWhoStamp = m.what
+            self.stamp = max(self.stamp, fromWhoStamp) + 1
+            self.networkState[m.fromWho] = ('L', fromWhoStamp)
+            # Vérification de l'état d'une éventuelle demande du site
+            self.status_check()
         elif m.messageType == "AckMessage":
-            #todo
+            # NET reçoit un message de type accusé d'une autre application
+            fromWhoStamp = m.what
+            self.stamp = max(self.stamp, fromWhoStamp) + 1
+            # On n’écrase pas la date d’une requête par celle d’un accusé
+            if self.networkState[m.fromWho][0] != 'R':
+                self.networkState[m.fromWho] = ('A', m.fromWhoStamp)
+            # Vérification de l'état d'une éventuelle demande du site
+            self.status_check()
         elif m.isPrepost:
             self.logger("Réception message extérieur PREPOST")
             if self.initiatorSave:
