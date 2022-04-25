@@ -83,9 +83,11 @@ class BroadcastMessage(Message):
     def __init__(self, fromWho, messageType, vectClock, what):
         super().__init__("ALL", fromWho, messageType, vectClock, what)
 
+
 """ Class
     BroadcastMessage --> EditMessage : Message with "EditMessage" in messageType attribute
 """
+
 
 class EditMessage(BroadcastMessage):
     def __init__(self, fromWho, vectClock, what):
@@ -93,7 +95,7 @@ class EditMessage(BroadcastMessage):
 
 
 """ Class 
-    Message --> LockRequestMessage : Message with "LockRequestMessage" in type attribute
+    BroadcastMessage --> LockRequestMessage : Message with "LockRequestMessage" in type attribute
 """
 
 
@@ -113,7 +115,7 @@ class AckMessage(Message):
 
 
 """ Class 
-    Message --> ReleaseMessage : Message with "ReleaseMessage" in type attribute
+    BroadcastMessage --> ReleaseMessage : Message with "ReleaseMessage" in type attribute
 """
 
 
@@ -123,7 +125,7 @@ class ReleaseMessage(BroadcastMessage):
 
 
 """ Class 
-    Message --> StateMessage : Message with "StateMessage" in type attribute
+    BroadcastMessage --> StateMessage : Message with "StateMessage" in type attribute
 """
 
 
@@ -133,7 +135,7 @@ class StateMessage(BroadcastMessage):
 
 
 """ Class 
-    Message --> SnapshotRequestMessage : Message with "SnapshotRequestMessage" in type attribute, what doesn't matter
+    BroadcastMessage --> SnapshotRequestMessage : Message with "SnapshotRequestMessage" in type attribute, what doesn't matter
 """
 
 
