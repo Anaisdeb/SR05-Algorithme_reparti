@@ -80,7 +80,7 @@ class BasState:
         decodedText = base64.b64decode(content[2].encode('ascii')).decode('utf8')
         if content[0] == "True":
             isRequestingCs = True
-        return BasState(content[2], content[1], isRequestingCs)
+        return BasState(decodedText, content[1], isRequestingCs)
 
 
 """ Class
