@@ -2,14 +2,14 @@
 
 ## Table des matières
 1. [Présentation](#Présentation)
-2. [Installation et Lancement du projet](#InstallationPresentation)
-    a. [Installation](#Installation)
+2. [Installation et Lancement du projet](#InstallationPresentation) <br/>
+    a. [Installation](#Installation) <br/>
     b. [Lancement](#Lancement)
-4. [Principe de fonctionnement](#Principe_de_fonctionnement)
-    a. [Activité 4](#Activité_4)
-    b. [Algorithme de file d'attente](#Algorithme_de_file_d'attente)
-    c. [Algorithme de sauvegarde](#Algorithme_de_sauvegarde)
-    d. [Algorithme de l'application de base](#Algorithme_de_l'application_de_base)
+4. [Principe de fonctionnement](#Principe_de_fonctionnement) <br/>
+    a. [Activité 4](#Activité_4) <br/>
+    b. [Algorithme de file d'attente](#Algorithme_de_file_d'attente) <br/>
+    c. [Algorithme de sauvegarde](#Algorithme_de_sauvegarde) <br/>
+    d. [Algorithme de l'application de base](#Algorithme_de_l'application_de_base) <br/>
 5. [Scénarios de fonctionnement](#Scenario)
 6. [Documentation](#Documentation)
 
@@ -108,11 +108,11 @@ Dès lors que ces outils ont été définis, l'algorithme 11 vu dans <a href="ht
 ### Algorithme de l'application de base <a class="anchor" id="Algorithme_de_l'application_de_base "></a>
 
 Pour l'application de base, nous avons choisi d'implémenter un système de partage de fichier avec un fichier partagé, accessible en lecture/écriture. Pour cela : 
-- On a crée dans un premier temps une classe Bas dans le fichier [bas.py](/bas.py),
+- On a crée dans un premier temps une classe **Bas** dans le fichier [bas.py](/bas.py),
 - On a lié une instance de **Bas** à chaque site Net dès leur construction à l'aide d'un attribut **bas**,
 - A l'aide d'une interface graphique et un système de commande, l'utilisateur à la possibilité d'écrire des commandes pour commander une modification, enclenchant alors une demande d'entrée en section critique. 
 - Dès que la demande est émise, le site attend sont entrée en section critique. Dès son entrée, c'est-à-dire dès que **checkStatus()** déclenche **enterCs()**, qui envoit grâce à **bas.send()** un message à **Bas**, celui-ci va exécuter la commande entrée dans **doAction()**. Le fichier est modifié avec la méthode **edit()** enclenchée par **doAction()**
-- Après modification du document, **Bas** envoit un message au réseau avec **sendMessageFromBas()** pour leur indiquer ce qui a été modifié. Les différents sites détecte alors un nouveau type de message **EditMessage()** indiquant une modification du fichier partagé, et en réaction lance la méthode **doAction()** avec la commande en paramètre. La modification est alors propagée. 
+- Après modification du document, **Bas** envoit un message au réseau avec **sendMessageFromBas()** pour leur indiquer ce qui a été modifié. Les différents sites détecte alors un nouveau type de message **EditMessage** indiquant une modification du fichier partagé, et en réaction lance la méthode **doAction()** avec la commande en paramètre. La modification est alors propagée. 
 
 Pour plus de précision sur les méthodes implémentées, voir la [documentation](#BasClass) sur la classe Bas.
 
