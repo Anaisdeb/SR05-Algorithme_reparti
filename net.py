@@ -71,7 +71,7 @@ class Net:
         try:
             for line in sys.stdin:
                 if line != "\n":
-                    readMessage = Message.fromString(line)
+                    readMessage = Message.fromString(line.rstrip("\n"))
                     if str(readMessage.fromWho) != str(self.netID):
                         self.messages.put(("process", readMessage))
         except IOError:
