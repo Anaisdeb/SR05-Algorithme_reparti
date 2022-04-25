@@ -60,12 +60,12 @@ class VectClock:
         
     method: 
         - __str__(self) --> "encodedtext°command°isRequestingCs"
-        - from_string(cls, string) --> get a State from a string (static method)
+        - fromString(cls, string) --> get a State from a string (static method)
 """
 
 
 class BasState:
-    def __init__(self, text, command = "", isRequestingCs = False):
+    def __init__(self, text, command="", isRequestingCs = False):
         self.text = text
         self.command = command
         self.isRequestingCs = isRequestingCs
@@ -75,7 +75,7 @@ class BasState:
         return f"{self.isRequestingCs}°{self.command}°{encodedText}"
 
     @classmethod
-    def from_string(cls, content):
+    def fromString(cls, content):
         isRequestingCs = False
         decodedText = base64.b64decode(content[2].encode('ascii')).decode('utf8')
         if content[0] == "True":
@@ -128,7 +128,7 @@ class State:
     @classmethod
     def fromString(cls, stringToConvert):
         stateContent = stringToConvert.split("°")
-        basState = BasState.from_string(stateContent[4:])
+        basState = BasState.fromString(stateContent[4:])
         state = State(
             stateContent[0],
             stateContent[1],
