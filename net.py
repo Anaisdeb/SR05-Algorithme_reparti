@@ -90,10 +90,9 @@ class Net:
     '''
     def centurion(self):
         while not(self.messages.empty()) or self.readMessageThread.is_alive():
-            # lire événement en tête de file /* lecture bloquante */
             item = self.messages.get()
             if item[0] == "send":
-                self.logger(f"The centurion spreads {item[1]} in the Ring")
+                self.logger(f"The centurion spreads {item[1]} on the Ring")
                 print(item[1], file=sys.stdout, flush=True)
             elif item[0] == "process":
                 message = item[1]
@@ -173,89 +172,119 @@ class Net:
         enterCs(self) --> Enter into Critical Section, then send release message to the network
     '''
     def enterCs(self):
-        self.logger("Entrée en section critique")
+        self.logger("Entry in the critical section")
         self.sendToBas("CsOk")
         self.basCsRelease()
 
     '''
-        receiveExternalMessage(self, m) --> receive message from network, and act according to the type :
-            - stateMessage:  if netSite is the initiator of the snapshot, if it's the last remaining message, 
-                             finish snapshot and write it into a file
-                             if it's not the initiator, transmit it to next neighbor 
-            - LockRequestMessage: save Request into networkState, send an ACK, then check state of the netSite
-            - ReleaseMessage: release Request in networkState, then check state of the netSite,
-            - AckMessage: if any Request is registered for this source, save the ACK into networkState, the check state,
-            - normal message with "isPrepost" at True : same as State Message
-            - normal message: if message is red and netSite white, turn netSite into red and turn into SNAPSHOT mode,
-                              if message is white and netsite red, pass into PREPOST mode
+        receiveExternalMessage(self, msgReceived) --> receive message from network, and act according to the type
     '''
     def receiveExternalMessage(self, msgReceived):
         self.state.vectClock.incr(msgReceived.vectClock)
         if msgReceived.messageType == "StateMessage":
-            self.logger("Receive STATE message")
-            if self.initiatorSave:
-                etatDistant = State.fromString(msgReceived.what)
-                self.globalState.append(etatDistant)
-                self.nbWaitingState -= 1
-                self.nbWaitingMessage += etatDistant.messageAssess
-                if self.nbWaitingMessage == 0 and self.nbWaitingState == 0:
-                    self.logger("Finishing snapshot")
-                    with open("save.txt", "w") as fic:
-                        for etat in self.globalState:
-                            fic.write(str(etat) + "\n")
-                    exit(0)
-            else:
-                self.logger("Received STATE message, not initiator, resend it")
-                self.writeMessage(msgReceived)
+            self.receiveExternalStateMessage(msgReceived)
         elif msgReceived.messageType == "LockRequestMessage":
-            self.logger("Receive LOCK REQUEST message")
-            fromWhoStamp = int(msgReceived.what)
-            self.stamp = max(self.stamp, fromWhoStamp) + 1
-            self.networkState[int(msgReceived.fromWho)] = ('R', fromWhoStamp)
-            ackMessage = AckMessage(msgReceived.fromWho, self.netID, self.state.vectClock, self.stamp)
-            self.writeMessage(ackMessage)
-            self.checkState()
+            self.receiveExternalLockRequestMessage(msgReceived)
         elif msgReceived.messageType == "ReleaseMessage":
-            self.logger("Receive Release message")
-            fromWhoStamp = int(msgReceived.what)
-            self.stamp = max(self.stamp, fromWhoStamp) + 1
-            self.networkState[int(msgReceived.fromWho)] = ('L', fromWhoStamp)
-            self.checkState()
+            self.receiveExternalReleaseMessage(msgReceived)
         elif msgReceived.messageType == "AckMessage":
-            self.logger("Receive ACK message")
-            fromWhoStamp = int(msgReceived.what)
-            self.stamp = max(self.stamp, fromWhoStamp) + 1
-            if self.networkState[int(msgReceived.fromWho)][0] != 'R':
-                self.networkState[int(msgReceived.fromWho)] = ('A', fromWhoStamp)
-            self.checkState()
+            self.receiveExternalAckMessage(msgReceived)
         elif msgReceived.isPrepost:
-            self.logger("Receive PREPOST message")
-            if self.initiatorSave:
-                self.nbWaitingMessage -= 1
-                self.logger(msgReceived.contenu)
-                self.globalState.extend(msgReceived)
-                if self.nbWaitingMessage == 0 and self.nbWaitingState == 0:
-                    self.logger("Finishing snapshot")
-                    with open("save.txt", "w") as fic:
-                        for etat in self.globalState:
-                            fic.write(str(etat) + "\n")
-                    exit(0)
-            else:
-                self.logger("Received PREPOST message, not initiator, resend it")
-                self.writeMessage(msgReceived)
+            self.receiveExternalPrepostMessage(msgReceived)
         else:
-            self.logger("Receive NORMAL message")
-            self.sendToBas(msgReceived.what)
-            self.messageAssess -= 1
-            if msgReceived.color == "red" and self.color == "white":
-                self.logger("Enter into SNAPSHOT mode")
-                self.color = "red"
-                self.globalState.append(self.state)
-                self.writeMessage(StateMessage(self.netID, self.state.vectClock, self.state))
-            if msgReceived.color == "white" and self.color == "red":
-                self.logger("switch into PREPOST")
-                self.writeMessage(msgReceived.toPrepost())
-
+            self.receiveExternalNormalMessage(msgReceived)
+            
+    '''
+        receiveExternalStateMessage(self, msgReceived) --> if netSite is the initiator of the snapshot, if it's the last remaining message, 
+                                                        finish snapshot and write it into a file
+                                                        if it's not the initiator, transmit it to next neighbor 
+    '''
+    def receiveExternalStateMessage(self, msgReceived):
+        self.logger("Receive STATE message")
+        if self.initiatorSave:
+            etatDistant = State.fromString(msgReceived.what)
+            self.globalState.append(etatDistant)
+            self.nbWaitingState -= 1
+            self.nbWaitingMessage += etatDistant.messageAssess
+            if self.nbWaitingMessage == 0 and self.nbWaitingState == 0:
+                self.logger("Finishing snapshot")
+                with open("save.txt", "w") as fic:
+                    for etat in self.globalState:
+                        fic.write(str(etat) + "\n")
+                exit(0)
+        else:
+            self.logger("Received STATE message, not initiator, resend it")
+            self.writeMessage(msgReceived)
+    
+    '''
+        receiveExternalLockRequestMessage(self, msgReceived) --> save Request into networkState, send an ACK, then check state of the netSite
+    '''
+    def receiveExternalLockRequestMessage(self, msgReceived):
+        self.logger("Receive LOCK REQUEST message")
+        fromWhoStamp = int(msgReceived.what)
+        self.stamp = max(self.stamp, fromWhoStamp) + 1
+        self.networkState[int(msgReceived.fromWho)] = ('R', fromWhoStamp)
+        ackMessage = AckMessage(msgReceived.fromWho, self.netID, self.state.vectClock, self.stamp)
+        self.writeMessage(ackMessage)
+        self.checkState()
+    
+    '''
+        receiveExternalReleaseMessage(self, msgReceived) --> release Request in networkState, then check state of the netSite,
+    '''
+    def receiveExternalReleaseMessage(self, msgReceived):
+        self.logger("Receive Release message")
+        fromWhoStamp = int(msgReceived.what)
+        self.stamp = max(self.stamp, fromWhoStamp) + 1
+        self.networkState[int(msgReceived.fromWho)] = ('L', fromWhoStamp)
+        self.checkState()
+            
+    '''
+        receiveExternalAckMessage(self, msgReceived) --> if no Request is registered for this source, save the ACK into networkState, then check state of the netSite
+    '''
+    def receiveExternalAckMessage(self, msgReceived):
+        self.logger("Receive ACK message")
+        fromWhoStamp = int(msgReceived.what)
+        self.stamp = max(self.stamp, fromWhoStamp) + 1
+        if self.networkState[int(msgReceived.fromWho)][0] != 'R':
+            self.networkState[int(msgReceived.fromWho)] = ('A', fromWhoStamp)
+        self.checkState()
+    
+    '''
+        receiveExternalPrepostMessage(self, msgReceived) --> normal message with "isPrepost" at True : same as State Message
+    '''
+    def receiveExternalPrepostMessage(self, msgReceived):
+        self.logger("Receive PREPOST message")
+        if self.initiatorSave:
+            self.nbWaitingMessage -= 1
+            self.logger(msgReceived.contenu)
+            self.globalState.extend(msgReceived)
+            if self.nbWaitingMessage == 0 and self.nbWaitingState == 0:
+                self.logger("Finishing snapshot")
+                with open("save.txt", "w") as fic:
+                    for etat in self.globalState:
+                        fic.write(str(etat) + "\n")
+                exit(0)
+        else:
+            self.logger("Received PREPOST message, not initiator, resend it")
+            self.writeMessage(msgReceived)
+    
+    '''
+        receiveExternalNormalMessage(self, msgReceived) --> if message is red and netSite white, turn netSite into red and turn into SNAPSHOT mode,
+                                                            if message is white and netsite red, pass into PREPOST mode
+    '''
+    def receiveExternalNormalMessage(self, msgReceived):
+        self.logger("Receive NORMAL message")
+        self.sendToBas(msgReceived.what)
+        self.messageAssess -= 1
+        if msgReceived.color == "red" and self.color == "white":
+            self.logger("Enter into SNAPSHOT mode")
+            self.color = "red"
+            self.globalState.append(self.state)
+            self.writeMessage(StateMessage(self.netID, self.state.vectClock, self.state))
+        if msgReceived.color == "white" and self.color == "red":
+            self.logger("switch into PREPOST")
+            self.writeMessage(msgReceived.toPrepost())
+        
     '''
         run(self) --> Run every thread initialized in __init__(self)
     '''

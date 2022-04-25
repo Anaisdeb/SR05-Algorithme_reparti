@@ -139,4 +139,4 @@ class StateMessage(BroadcastMessage):
 
 class SnapshotRequestMessage(BroadcastMessage):
     def __init__(self, fromWho, vectClock):
-        super().__init__(fromWho, "SnapshotRequestMessage", vectClock, "This is a snapshot requsupeest!")
+        super().__init__(fromWho, "SnapshotRequestMessage", vectClock, "This is a snapshot request!")
