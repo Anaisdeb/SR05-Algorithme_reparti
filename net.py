@@ -25,6 +25,8 @@ nbSite = 3
         - netID: ID of the netSite,
         - nbSite: number of Site in the netword,
         - bas: bas application
+        - stamp: logical Clock for polling algorithm,
+        - networkState: array which represent state of the network, for polling algorithm
         - color: color of the netSite (white, red),
         - initiatorSave: is this netSite the initiator, 
         - globalState : global state of the network, according to this netSite,
