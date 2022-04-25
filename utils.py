@@ -1,3 +1,5 @@
+import base64
+
 """ Class
     VectClock : class for vectorized clock
 
@@ -49,6 +51,39 @@ class VectClock:
 
 
 """ Class
+    BasState: class for basSite State
+
+    attribute:
+        - text: bas text
+        - command: executed command
+        - isRequestingCs: state of CS request for this site
+        
+    method: 
+        - __str__(self) --> "encodedtext°command°isRequestingCs"
+        - from_string(cls, string) --> get a State from a string (static method)
+"""
+
+
+class BasState:
+    def __init__(self, text, command = "", isRequestingCs = False):
+        self.text = text
+        self.command = command
+        self.isRequestingCs = isRequestingCs
+
+    def __str__(self):
+        encodedText = base64.b64encode(self.text.encode('utf8')).decode('ascii')
+        return f"{self.isRequestingCs}°{self.command}°{encodedText}"
+
+    @classmethod
+    def from_string(cls, content):
+        isRequestingCs = False
+        decodedText = base64.b64decode(content[2].encode('ascii')).decode('utf8')
+        if content[0] == "True":
+            isRequestingCs = True
+        return BasState(content[2], content[1], isRequestingCs)
+
+
+""" Class
     State: class for netSite State
     
     attribute: 
@@ -56,9 +91,10 @@ class VectClock:
         - netId: ID of the netSite,
         - nbSite: number of Site,
         - vectClock: vectorized Clock of the netSite
+        - basState: state for bas site
         
     method: 
-        - __str__(self) --> "netId°nbSite°messageAssess°vectClock"
+        - __str__(self) --> "netId°nbSite°messageAssess°vectClock°basState"
         - fromString(cls, string) --> get a State from a string (static method)
 """
 
@@ -68,6 +104,7 @@ class State:
             self,
             netID,
             nbSite,
+            basState,
             messageAssess=0
     ):
         self.messageAssess = int(messageAssess)
@@ -79,19 +116,23 @@ class State:
             nbSite,
             tab
         )
+        self.basState = basState
 
     def __str__(self):
         return f"{self.netID}°" \
                f"{self.nbSite}°" \
                f"{self.messageAssess}°" \
-               f"{self.vectClock}"
+               f"{self.vectClock}°" \
+               f"{self.basState}"
 
     @classmethod
     def fromString(cls, stringToConvert):
         stateContent = stringToConvert.split("°")
+        basState = BasState.from_string(stateContent[4:])
         state = State(
             stateContent[0],
             stateContent[1],
+            basState,
             stateContent[2]
         )
         state.vectClock = VectClock.fromString(stateContent[3])

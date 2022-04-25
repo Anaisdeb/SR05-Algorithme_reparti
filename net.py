@@ -56,7 +56,7 @@ class Net:
         self.messages = queue.Queue(maxsize=0)
         self.readMessageThread = threading.Thread(target=self.readMessage)
         self.centurionThread = threading.Thread(target=self.centurion)
-        self.state = State(self.netID, self.nbSite, self.messageAssess)
+        self.state = State(self.netID, self.nbSite, self.bas.state, self.messageAssess)
 
     '''
         logger(self, logContent) --> print logContent in stderr with flush option,

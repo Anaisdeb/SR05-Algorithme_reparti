@@ -1,12 +1,12 @@
 import tkinter
 from tkinter import messagebox
-import base64
 from messages import EditMessage
+from utils import BasState
 
 class Bas:
     def __init__(self, net):
         self.net = net
-        self.text = """Bonjour
+        self.state = BasState("""Bonjour
 Ceci est un exemple de fichier texte à modifier
 
 Utilisez l'entrée de commande en dessous pour le modifier :
@@ -17,13 +17,12 @@ Utilisez l'entrée de commande en dessous pour le modifier :
     - 3;a;blabla
       Ajoute la ligne blabla après la 3e ligne
     - 3;i;blabla
-      Insère la ligne blabla avant la 3e ligne
-"""
+      Insère la ligne blabla avant la 3e ligne""")
         self.root = tkinter.Tk()
         self.requestSnapshotButton = tkinter.Button(self.root, command=self.snapshot, text="Request a snapshot", foreground="red")
         self.requestSnapshotButton.pack()
         self.printTextWidget = tkinter.Text(self.root)
-        self.printTextWidget.insert("1.0", self.text)
+        self.printTextWidget.insert("1.0", self.state.text)
         self.printTextWidget["state"] = "disabled"
         self.printTextWidget.pack()
         self.commandFrame = tkinter.Frame(self.root)
@@ -32,11 +31,6 @@ Utilisez l'entrée de commande en dessous pour le modifier :
         self.commandEntry.pack()
         self.commandButton = tkinter.Button(self.commandFrame, command=self.action, text="Modifier")
         self.commandButton.pack()
-        self.isRequestingSc = False
-
-    def __str__(self):
-        encodedText = base64.b64encode(self.text.encode('utf8'))
-        return f"{self.isRequestingSc}°{self.commandEntry.get()}°{encodedText}"
 
     def send(self, msg):
         if msg == "CsOk":
@@ -50,6 +44,7 @@ Utilisez l'entrée de commande en dessous pour le modifier :
 
     def action(self):
         self.net.basCsRequest()
+        self.state.isRequestingCs = True
         self.commandButton['state'] = 'disabled'
         self.commandEntry['state'] = 'disabled'
 
@@ -60,11 +55,12 @@ Utilisez l'entrée de commande en dessous pour le modifier :
             self.net.sendMessageFromBas(EditMessage(self.net.netID, self.net.state.vectClock, self.commandEntry.get()))
         except:
             messagebox.showerror("Error", "Failed to apply command, please check command syntax")
+        self.state.isRequestingCs = False
         self.commandButton['state'] = 'normal'
         self.commandEntry['state'] = 'normal'
 
     def edit(self, command):
-        modified_text = self.text.split("\n")
+        modified_text = self.state.text.split("\n")
         if command.action == "s":
             modified_text[command.lineNumber - 1] = command.text
         elif command.action == "a":
@@ -73,10 +69,10 @@ Utilisez l'entrée de commande en dessous pour le modifier :
             modified_text.insert(command.lineNumber - 1, command.text)
         else:
             del modified_text[command.lineNumber - 1]
-        self.text = "\n".join(modified_text)
+        self.state.text = "\n".join(modified_text)
         self.printTextWidget["state"] = "normal"
         self.printTextWidget.delete("1.0", tkinter.END)
-        self.printTextWidget.insert("1.0", self.text)
+        self.printTextWidget.insert("1.0", self.state.text)
         self.printTextWidget["state"] = "disabled"
 
     def snapshot(self):
