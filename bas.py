@@ -45,6 +45,7 @@ Utilisez l'entrée de commande en dessous pour le modifier :
     def action(self):
         self.net.basCsRequest()
         self.state.isRequestingCs = True
+        self.state.command = self.commandEntry.get()
         self.commandButton['state'] = 'disabled'
         self.commandEntry['state'] = 'disabled'
 
