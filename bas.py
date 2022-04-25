@@ -1,4 +1,5 @@
 import tkinter
+from tkinter import messagebox
 import base64
 from messages import EditMessage
 
@@ -19,6 +20,8 @@ Utilisez l'entrée de commande en dessous pour le modifier :
       Insère la ligne blabla avant la 3e ligne
 """
         self.root = tkinter.Tk()
+        self.requestSnapshotButton = tkinter.Button(self.root, command=self.snapshot, text="Request a snapshot", foreground="red")
+        self.requestSnapshotButton.pack()
         self.printTextWidget = tkinter.Text(self.root)
         self.printTextWidget.insert("1.0", self.text)
         self.printTextWidget["state"] = "disabled"
@@ -39,8 +42,11 @@ Utilisez l'entrée de commande en dessous pour le modifier :
         if msg == "CsOk":
             self.doAction()
         else:
-            command = Command.parse(msg)
-            self.edit(command)
+            try:
+                command = Command.parse(msg)
+                self.edit(command)
+            except:
+                self.net.logger("This is not a command")
 
     def action(self):
         self.net.basCsRequest()
@@ -48,10 +54,12 @@ Utilisez l'entrée de commande en dessous pour le modifier :
         self.commandEntry['state'] = 'disabled'
 
     def doAction(self):
-        command = Command.parse(self.commandEntry.get())
-        self.edit(command)
-        self.net.sendMessageFromBas(EditMessage(self.net.netID, self.net.state.vectClock, self.commandEntry.get()))
-        self.net.basCsRelease()
+        try:
+            command = Command.parse(self.commandEntry.get())
+            self.edit(command)
+            self.net.sendMessageFromBas(EditMessage(self.net.netID, self.net.state.vectClock, self.commandEntry.get()))
+        except:
+            messagebox.showerror("Error", "Failed to apply command, please check command syntax")
         self.commandButton['state'] = 'normal'
         self.commandEntry['state'] = 'normal'
 
@@ -70,6 +78,9 @@ Utilisez l'entrée de commande en dessous pour le modifier :
         self.printTextWidget.delete("1.0", tkinter.END)
         self.printTextWidget.insert("1.0", self.text)
         self.printTextWidget["state"] = "disabled"
+
+    def snapshot(self):
+        self.net.initSnapshot()
 
     def run(self):
         self.root.mainloop()
