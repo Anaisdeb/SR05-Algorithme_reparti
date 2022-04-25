@@ -83,6 +83,14 @@ class BroadcastMessage(Message):
     def __init__(self, fromWho, messageType, vectClock, what):
         super().__init__("ALL", fromWho, messageType, vectClock, what)
 
+""" Class
+    BroadcastMessage --> EditMessage : Message with "EditMessage" in messageType attribute
+"""
+
+class EditMessage(BroadcastMessage):
+    def __init__(self, fromWho, vectClock, what):
+        super().__init__(fromWho, "EditMessage", vectClock, what)
+
 
 """ Class 
     Message --> LockRequestMessage : Message with "LockRequestMessage" in type attribute

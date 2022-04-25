@@ -13,6 +13,7 @@ from messages import (
     StateMessage,
     SnapshotRequestMessage
 )
+from bas import Bas
 
 appID = sys.argv[1]
 nbSite = 3
@@ -23,6 +24,7 @@ nbSite = 3
     attribute: 
         - netID: ID of the netSite,
         - nbSite: number of Site in the netword,
+        - bas: bas application
         - color: color of the netSite (white, red),
         - initiatorSave: is this netSite the initiator, 
         - messageAssess: Balance sheet of message in traffic,
@@ -40,6 +42,7 @@ class Net:
     def __init__(self, netID, nbSite):
         self.netID = int(netID)
         self.nbSite = nbSite
+        self.bas = Bas(self)
         self.stamp = 0
         self.networkState = {}
         for i in range(self.nbSite):
@@ -69,7 +72,8 @@ class Net:
             for line in sys.stdin:
                 if line != "\n":
                     readMessage = Message.fromString(line)
-                    self.messages.put(("process", readMessage))
+                    if str(readMessage.fromWho) != str(self.netID):
+                        self.messages.put(("process", readMessage))
         except IOError:
             self.logger("End of stdin")
 
@@ -124,7 +128,7 @@ class Net:
     '''
     def sendMessageFromBas(self, message):
         self.logger("Send message received from BAS")
-        message.setcolor(self.color)
+        message.setColor(self.color)
         self.messageAssess += 1
         self.writeMessage(message)
 
@@ -133,6 +137,7 @@ class Net:
     '''
     def sendToBas(self, message):
         self.logger(f"{self.netID} send {message} to BAS")
+        self.bas.send(message)
 
     '''
         basCsRequest(self) --> send Critical Section request message to the network
@@ -169,7 +174,7 @@ class Net:
     '''
     def enterCs(self):
         self.logger("Entrée en section critique")
-        # TODO : NET envoie à BAS l'autorisation d'entrer
+        self.sendToBas("CsOk")
         self.basCsRelease()
 
     '''
@@ -204,24 +209,24 @@ class Net:
                 self.writeMessage(msgReceived)
         elif msgReceived.messageType == "LockRequestMessage":
             self.logger("Receive LOCK REQUEST message")
-            fromWhoStamp = msgReceived.what
+            fromWhoStamp = int(msgReceived.what)
             self.stamp = max(self.stamp, fromWhoStamp) + 1
-            self.networkState[msgReceived.fromWho] = ('R', fromWhoStamp)
+            self.networkState[int(msgReceived.fromWho)] = ('R', fromWhoStamp)
             ackMessage = AckMessage(msgReceived.fromWho, self.netID, self.state.vectClock, self.stamp)
             self.writeMessage(ackMessage)
             self.checkState()
         elif msgReceived.messageType == "ReleaseMessage":
             self.logger("Receive Release message")
-            fromWhoStamp = msgReceived.what
+            fromWhoStamp = int(msgReceived.what)
             self.stamp = max(self.stamp, fromWhoStamp) + 1
-            self.networkState[msgReceived.fromWho] = ('L', fromWhoStamp)
+            self.networkState[int(msgReceived.fromWho)] = ('L', fromWhoStamp)
             self.checkState()
         elif msgReceived.messageType == "AckMessage":
             self.logger("Receive ACK message")
-            fromWhoStamp = msgReceived.what
+            fromWhoStamp = int(msgReceived.what)
             self.stamp = max(self.stamp, fromWhoStamp) + 1
-            if self.networkState[msgReceived.fromWho][0] != 'R':
-                self.networkState[msgReceived.fromWho] = ('A', msgReceived.fromWhoStamp)
+            if self.networkState[int(msgReceived.fromWho)][0] != 'R':
+                self.networkState[int(msgReceived.fromWho)] = ('A', fromWhoStamp)
             self.checkState()
         elif msgReceived.isPrepost:
             self.logger("Receive PREPOST message")
@@ -240,7 +245,7 @@ class Net:
                 self.writeMessage(msgReceived)
         else:
             self.logger("Receive NORMAL message")
-            # TODO, implement message Reception
+            self.sendToBas(msgReceived.what)
             self.messageAssess -= 1
             if msgReceived.color == "red" and self.color == "white":
                 self.logger("Enter into SNAPSHOT mode")
@@ -257,12 +262,11 @@ class Net:
     def run(self):
         self.readMessageThread.start()
         self.centurionThread.start()
+        self.bas.run()
         self.readMessageThread.join()
         self.centurionThread.join()
 
 
 if __name__ == "__main__":
     net = Net(appID, nbSite)
-    if int(appID) == 2:
-        net.initSnapshot()
     net.run()
