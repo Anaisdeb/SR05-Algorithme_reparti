@@ -59,7 +59,7 @@ On retrouve ici la solution 6 de l'activité 4 qui consiste en l'implémentation
 
 
 Concernant les différents acteurs de cet algorithme, on retrouve deux threads et une fonction permettant d'assurer la réception, l'envoi et le traitement des messages :
-- Le centurion, dans un thread, va ici dépiler un objet de la file, lire la première case (qui indique l'action à réaliser), et décider alors ce que va être fait du contenu du message dans la seconde case. (Voir [documentation](#centurion)) Lorsqu'il y a traitement du message, celui-ci est passé en paramètre de la fonction **receiveExternalMessage()** qui va réagir en fonction de son type. 
+- Le centurion, dans un thread, va ici dépiler un objet de la file, lire la première case et décider alors ce que va être fait du contenu du message dans la seconde case. Lorsqu'il y a traitement du message, celui-ci est passé en paramètre de la fonction **receiveExternalMessage()** qui va réagir en fonction de son type. 
 - Le thread de readMessage() lis chaque message écrit sur stdin et les enregistre sur la file(voir [documentation](#readMessage)). 
 - La fonction writeMessage() permet d'envoyer le message sur le flux stdout. Le message arrive alors sur le flux stdin du site voisin de par la topologie du réseau, et donc est lu par la fonction [readMessage()](#readMessage)(voir [documentation](#writeMessage)).
 
