@@ -42,7 +42,7 @@ mkfifo /tmp/f
 ```
 Ensuite, il faut lancer le programme net.py 3 fois sur la même ligne de commande pour avoir accès à l'interface d'utilisation du projet. Il est à noter qu'il faut nommer chaque site avec un numéro en paramètre, à partir de 0 et consécutifs. On aurait avec 3 sites par exemple :
 ```
-./net.py 0 < /tmp/f | ./net.py 2 | ./net.py 3 > /tmp/f
+./net.py 0 < /tmp/f | ./net.py 1 | ./net.py 2 > /tmp/f
 ```
 
 ## Principe de fonctionnement <a class="anchor" id="Principe_de_fonctionnement"></a>
