@@ -55,7 +55,8 @@ Pour cela on peut entrer des commandes au format suivant : ```a;b;c```
 - ```b``` est la commande à exécuter, on a ici :
   - ```s``` pour substituer le contenu de la ligne par le contenu définit dans ```c```
   - ```a``` pour ajouter une ligne après la ligne concernée avec le contenu défini dans ```c```
-  - ```d```
+  - ```d``` pour supprimer le contenu d'une ligne. Le contenu de ```c``` n'a pas d'importance dans ce cas. 
+- ```c ``` est le contenu du texte faisant l'objet de la commande. 
 
 ## Principe de fonctionnement <a class="anchor" id="Principe_de_fonctionnement"></a>
 
@@ -164,11 +165,19 @@ Concernant les classes ajoutées, on a:
 
 ### Quatrième scénario : Lancement d'une sauvegarde
 - On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
-- On lance alors les commandes du premier et second scénario, et on clique ensuite sur le bouton ```Request a snapshot```. On observe alors que le fichier save a été créé et rempli avec différentes lignes. Celles-ci correspondent aux états des 3 sites qui ont été démarrés. 
-- Le format de chaque état est 
+- On lance alors les commandes du premier et second scénario, et on clique ensuite sur le bouton ```Request a snapshot```. On observe alors que le fichier save a été créé et rempli avec différentes lignes. Celles-ci correspondent aux états des 3 sites qui ont été démarrés. L'ordre des états est ici le même que celui dans lequel les sites ont été initialisés. 
+- Le format de chaque état est :
 ```
-s°s°s°e#e#e#e#e
+netId°nbSite°messageAssess°vectClock°basState
 ```
+- ```netId``` est l'identifiant du site,
+- ```nbSite``` est le nombre de site dans le réseau,
+- ```messageAssess``` est le bilan des messages du site en transit dans le réseau,
+- ```vectClock``` est l'horloge vectorielle du site au format ```netId#nbSite#h#h#h```, où les deux premières informations sont identiques à celles précédemment citées, et h les horloges logiques de chaque site.
+- ```basState``` est l'état de l'application de base, qui est au format ```isRequestingCs°command°encodedText```, où :
+  - ``ìsRequestingCS`` est le booléen indiquant si le site souhaite l'entrée en section critique, 
+  - ```command``` est le contenu de la commande envoyé,
+  - ``èncodedText`` est le texte envoyé, encodé en base 64.
 
 ## Documentation <a class="anchor" id="Documentation "></a>
 
