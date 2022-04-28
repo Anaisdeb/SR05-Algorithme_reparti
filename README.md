@@ -43,7 +43,19 @@ mkfifo /tmp/f
 Ensuite, il faut lancer le programme net.py 3 fois sur la même ligne de commande pour avoir accès à l'interface d'utilisation du projet. Il est à noter qu'il faut nommer chaque site avec un numéro en paramètre, à partir de 0 et consécutifs. On aurait avec 3 sites par exemple :
 ```
 ./net.py 0 < /tmp/f | ./net.py 1 | ./net.py 2 > /tmp/f
+
+ou 
+
+python3 ./net.py 0 < /tmp/f |python3 ./net.py 1 |python3 ./net.py 2 > /tmp/f
 ```
+
+Une fois les fenêtres ouvertes, on peut alors modifier le contenu textuel (qui contient au départ les explications des commandes).
+Pour cela on peut entrer des commandes au format suivant : ```a;b;c```
+- ```a``` est ici le numéro de ligne concernée,
+- ```b``` est la commande à exécuter, on a ici :
+  - ```s``` pour substituer le contenu de la ligne par le contenu définit dans ```c```
+  - ```a``` pour ajouter une ligne après la ligne concernée avec le contenu défini dans ```c```
+  - ```d```
 
 ## Principe de fonctionnement <a class="anchor" id="Principe_de_fonctionnement"></a>
 
@@ -128,6 +140,30 @@ Concernant les classes ajoutées, on a:
 
 ## Scénarios de fonctionnement <a class="anchor" id="Scenario"></a>
 
+### Premier scénario : Ajout de contenu
+ - On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
+ - On entre dans la section de commande le texte :
+```
+3;a;Ligne ajoutée
+```
+ - On peut alors observer l'ajout d'une ligne après la troisième ligne avec le contenu de la dernière section "Ligne ajoutée"
+### Second scénario : Modification de contenu
+ - On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
+ - On entre dans la section de commande le texte:
+```
+3;s;Ligne modifiée
+```
+ - On observe alors que la troisième ligne a été changée en "Ligne modifiée"
+### Troisième scénario : Suppression de contenu
+ - On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
+ - On entre dans la section de commande le texte:
+```
+3;d;Ligne supprimée
+```
+ - On peut alors observer la suppression de la troisième ligne dans le contenu textuel. 
+
+###Quaa
+
 ## Documentation <a class="anchor" id="Documentation "></a>
 
 On retrouve dans ce projet 4 fichiers :
@@ -163,33 +199,32 @@ On retrouve dans ce projet 4 fichiers :
         - <u>checkState(self)</u> : Vérifie si le site peut entrer en section critique, en fonction de l'état du réseau dans l'algorithme de file d'attente.
         - <u>enterCs(self)</u> : Permet d'entrer en seciton critique, et envoie un message à Bas pour signaler l'entrée en section critique,
         - <u>receiveExternalMessage(self, msgReceived)</u> : méthode permettant la réception de message. En fonction du corps du messages.  
-- [bas.py](/bas.py) - Ce fichier contient l'ensemble de la Classe Bas et la classe Command, avec ses attributs et méthodes : 
+- [bas.py](/bas.py) - Ce fichier contient l'ensemble de la Classe **Bas** et la classe **Command**, avec ses attributs et méthodes : 
 
-
-    - **Bas** <a class="anchor" id="BasClass"></a>
-        - **Attributs** :
-            - <u>net</u>: Site NET lié à l'instance BAS,
-            - <u>state</u>: Contenu du fichier partagé,
-            - <u>root</u>: Instance de l'interface TKinter,
-            - <u>requestSnapshotButton</u>: Instance de bouton pour lancer des demandes de sauvegarde,
-            - <u>printTextWidget</u>: Instance de la section de texte explicatif de l'application. 
-            - <u>commandFrame</u>: Frame contenant la zone de texte ainsi que le bouton "Modifier". 
-            - <u>commandEntry</u>: Instance de la zone d'entrée de texte.
-            - <u>commandButton</u>: Instance contenant le bouton de modification du fichier.
-        - **Méthodes** : 
-            - <u>send(self, msg)</u>: Méthode permettant de lancer une instruction, contenu dans le paramètre msg, qui est soit un retour de net suite à une demande de section critique, soit une demande d'exécution reçue par NET (suite à la modification par un autre site par exemple).
-            - <u>action(self)</u>: Méthode permettant d'émettre, si l'on appuie sur le bouton "Modifier", de lancer une demande de section critique sur le réseau, et de désactiver les boutons en attendant la réponse.
-            - <u>doAction(self)</u>: Méthode permettant de lancer la commande contenue dans le champs de texte. Après exécution, les boutons sont à nouveau cliquable.
-            - <u>edit(self, command)</u>: Méthode permettant la modification du champs texte "printTextWidget" suite à la réception d'une commande ici en paramètre.
-            - <u>snapshot</u>: Méthode lancée après appuie sur le bouton "Request a snapshot", lance la fonction associé de la classe Net.
-            - <u>run(self)</u>: Méthode permettant de lancer l'affichage de l'interface TKinter.
-    - **Command**
-        - **Attributs** :
-            - <u>lineNumber</u>: Ligne du texte concernée par la commande.
-            - <u>action</u>: Action à réaliser sur le texte (modifier/ajouter/supprimer).
-            - <u>text</u>: Texte contenu de la commande (à ajouter, rempaçant le texte présent).
-        - **Méthodes** :
-            - <u>parse(cls, s)</u>: Méthode statique permettant de créer une instance de commande à partir d'une chaîne de caractères.
+- **Bas** <a class="anchor" id="BasClass"></a>
+    - **Attributs** :
+        - <u>net</u>: Site NET lié à l'instance BAS,
+        - <u>state</u>: Contenu du fichier partagé,
+        - <u>root</u>: Instance de l'interface TKinter,
+        - <u>requestSnapshotButton</u>: Instance de bouton pour lancer des demandes de sauvegarde,
+        - <u>printTextWidget</u>: Instance de la section de texte explicatif de l'application. 
+        - <u>commandFrame</u>: Frame contenant la zone de texte ainsi que le bouton "Modifier". 
+        - <u>commandEntry</u>: Instance de la zone d'entrée de texte.
+        - <u>commandButton</u>: Instance contenant le bouton de modification du fichier.
+    - **Méthodes** : 
+        - <u>send(self, msg)</u>: Méthode permettant de lancer une instruction, contenu dans le paramètre msg, qui est soit un retour de net suite à une demande de section critique, soit une demande d'exécution reçue par NET (suite à la modification par un autre site par exemple).
+        - <u>action(self)</u>: Méthode permettant d'émettre, si l'on appuie sur le bouton "Modifier", de lancer une demande de section critique sur le réseau, et de désactiver les boutons en attendant la réponse.
+        - <u>doAction(self)</u>: Méthode permettant de lancer la commande contenue dans le champs de texte. Après exécution, les boutons sont à nouveau cliquable.
+        - <u>edit(self, command)</u>: Méthode permettant la modification du champs texte "printTextWidget" suite à la réception d'une commande ici en paramètre.
+        - <u>snapshot</u>: Méthode lancée après appuie sur le bouton "Request a snapshot", lance la fonction associé de la classe Net.
+        - <u>run(self)</u>: Méthode permettant de lancer l'affichage de l'interface TKinter.
+- **Command**
+    - **Attributs** :
+        - <u>lineNumber</u>: Ligne du texte concernée par la commande.
+        - <u>action</u>: Action à réaliser sur le texte (modifier/ajouter/supprimer).
+        - <u>text</u>: Texte contenu de la commande (à ajouter, rempaçant le texte présent).
+    - **Méthodes** :
+        - <u>parse(cls, s)</u>: Méthode statique permettant de créer une instance de commande à partir d'une chaîne de caractères.
 
 
 - [utils.py](/utils.py) - Ce fichier contient l'ensemble des classes utilitaires qui sont : 
