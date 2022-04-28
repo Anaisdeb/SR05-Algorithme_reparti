@@ -23,7 +23,7 @@ Ce projet a été réalisé dans le cadre de l'enseignement SR05 en Printemps 20
 
 ### Installation <a class="anchor" id="Installation"></a>
 
-Dans un premier temps, il est nécessaire de clone le projet sur Gitlab :`
+Dans un premier temps, il est nécessaire de cloner le projet sur Gitlab :`
 
 Si le compte possède une clé SSH : 
 ```
@@ -40,7 +40,7 @@ Pour lancer le projet, il est nécessaire de créer dans un premier temps un pip
 ```
 mkfifo /tmp/f
 ```
-Ensuite, il faut lancer le programme net.py 3 fois sur la même ligne de commande pour avoir accès à l'interface d'utilisation du projet. Il est à noter qu'il faut nommer chaque site avec un numéro en paramètre, à partir de 0 et consécutifs. On aurait avec 3 sites par exemple :
+Ensuite, dans le dossier du projet, il faut lancer le programme net.py 3 fois sur la même ligne de commande pour avoir accès à l'interface d'utilisation du projet. Il est à noter qu'il faut nommer chaque site avec un numéro en paramètre, à partir de 0 et consécutifs. On aurait avec 3 sites par exemple :
 ```
 ./net.py 0 < /tmp/f | ./net.py 1 | ./net.py 2 > /tmp/f
 
@@ -67,12 +67,12 @@ On retrouve ici la solution 6 de l'activité 4 qui consiste en l'implémentation
 
 Étant donné que les messages sont stockés dans une file, on a donc un traitement séquentiel et FIFO de ceux-ci. Concernant la structure de celle-ci et des messages, on a dans un premier temps choisi que chaque objet de la file est un tableau de 2 cases :
 - La première case est un mot qui définit quelle action faire avec le message. Si c'est "send", le message sera envoyé, si c'est "process", le message sera traité si le site est destinataire de ce message. 
-- La seconde case est le contenu du message sous forme d'une chaîne de caractère. Il est nécessaire alors avant de le traiter de créer une instance de message à partir de cette chaîne de caractère. Le format des messages est presque identique à celle de Airplug, c'est-à-dire **"who\~fromWho\~messageType\~color\~isPrepost\~vectClock\~what"**. Nous avons ajouté le champs **isPrepost** et **vectClock** dans le but de ne pas avoir à le faire dans le champs **what**.
+- La seconde case est le contenu du message sous forme d'une chaîne de caractères. Il est nécessaire alors avant de le traiter de créer une instance de message à partir de cette chaîne de caractères. Le format des messages est presque identique à celle de Airplug, c'est-à-dire **"who\~fromWho\~messageType\~color\~isPrepost\~vectClock\~what"**. Nous avons ajouté le champs **isPrepost** et **vectClock** dans le but de ne pas avoir à le faire dans le champs **what**.
 
 
 Concernant les différents acteurs de cet algorithme, on retrouve deux threads et une fonction permettant d'assurer la réception, l'envoi et le traitement des messages :
 - Le centurion, dans un thread, va ici dépiler un objet de la file, lire la première case et décider alors ce que va être fait du contenu du message dans la seconde case. Lorsqu'il y a traitement du message, celui-ci est passé en paramètre de la fonction **receiveExternalMessage()** qui va réagir en fonction de son type. 
-- Le thread de readMessage() lis chaque message écrit sur stdin et les enregistre sur la file(voir [documentation](#readMessage)). 
+- Le thread de readMessage() lit chaque message écrit sur stdin et les enregistre sur la file(voir [documentation](#readMessage)). 
 - La fonction writeMessage() permet d'envoyer le message sur le flux stdout. Le message arrive alors sur le flux stdin du site voisin de par la topologie du réseau, et donc est lu par la fonction [readMessage()](#readMessage)(voir [documentation](#writeMessage)).
 
 
@@ -97,16 +97,16 @@ Pour cela, il a fallu adapter le code de l'activité 4 en ajoutant des attributs
     - <u>AckMessage</u> : Classe pour les messages d'accusés de réception,
     - <u>ReleaseMessage</u> : Classe pour les messages de libération de section critique.
 
-Dès lors que ces différents outils ont été définis, il a suffit de dérouler l'algorithme définis ci-contre, notamment en définissante
+Dès lors que ces différents outils ont été définis, il a suffit de dérouler l'algorithme défini ci-contre, notamment en définissant
 
 ### Algorithme de sauvegarde <a class="anchor" id="Algorithme_de_sauvegarde"></a>
 
-Concernant l'algorithme de sauvegarde, il y a eu des ajouts comme dans l'algorithme de file d'attente. En effet, des attributs, méthodes et classes. 
+Concernant l'algorithme de sauvegarde, il y a eu des ajouts comme dans l'algorithme de file d'attente. 
 - En effet des attributs ont été ajoutés sur la classe Net, la classe State et Message: 
     - <u>initiatorSave (Net)</u>: booléen indiquant si le site est à l'initiative de la sauvegarde.
     - <u>messageAssess(State)</u> Bilan des messages en transit dans le réseau.
     - <u>globalState (Net)</u>: Dernier enregistrement de l'état global par le site,
-    - <u>nbWaitingMessage (Net)</u> et <u>NbWatingState</u>: Nombre de messages et d'état attendu par le site,
+    - <u>nbWaitingMessage (Net)</u> et <u>NbWatingState</u>: Nombre de messages et d'états attendus par le site,
     - <u>vectClock(Net et Message)</u>: Valeur de l'horloge vectorielle pour le message ou l'état.
 - Ensuite, des méthodes ont été ajoutées : 
     - <u>initSnapshot(self)</u>: Méthode d'initialisation de la sauvegarde par un site,
@@ -115,7 +115,7 @@ Concernant l'algorithme de sauvegarde, il y a eu des ajouts comme dans l'algorit
     - <u>SnapshotRequestMessage</u> Messages ayant comme but de transmettre les demandes de sauvegardes.
     - <u>StateMessage</u> : Messages permettant de transmettre les états des sites dans leur contenu. 
 
-Dès lors que ces outils ont été définis, l'algorithme 11 vu dans <a href="https://moodle.utc.fr/pluginfile.php/129094/mod_resource/content/1/5-poly-06-2019S.pdf">ce cours</a> a été suivi, notamment grâce au fait que la topologie du réseau est un anneau permettant de faire office d'anneau de contrôle.xé
+Dès lors que ces outils ont été définis, l'algorithme 11 vu dans <a href="https://moodle.utc.fr/pluginfile.php/129094/mod_resource/content/1/5-poly-06-2019S.pdf">ce cours</a> a été suivi, notamment grâce au fait que la topologie du réseau est un anneau permettant de faire office d'anneau de contrôle.
 
 ### Algorithme de l'application de base <a class="anchor" id="Algorithme_de_l'application_de_base "></a>
 
@@ -123,17 +123,17 @@ Pour l'application de base, nous avons choisi d'implémenter un système de part
 - On a crée dans un premier temps une classe **Bas** dans le fichier [bas.py](/bas.py),
 - On a lié une instance de **Bas** à chaque site Net dès leur construction à l'aide d'un attribut **bas**,
 - A l'aide d'une interface graphique et un système de commande, l'utilisateur à la possibilité d'écrire des commandes pour commander une modification, enclenchant alors une demande d'entrée en section critique. 
-- Dès que la demande est émise, le site attend sont entrée en section critique. Dès son entrée, c'est-à-dire dès que **checkStatus()** déclenche **enterCs()**, qui envoit grâce à **bas.send()** un message à **Bas**, celui-ci va exécuter la commande entrée dans **doAction()**. Le fichier est modifié avec la méthode **edit()** enclenchée par **doAction()**
-- Après modification du document, **Bas** envoit un message au réseau avec **sendMessageFromBas()** pour leur indiquer ce qui a été modifié. Les différents sites détecte alors un nouveau type de message **EditMessage** indiquant une modification du fichier partagé, et en réaction lance la méthode **doAction()** avec la commande en paramètre. La modification est alors propagée. 
+- Dès que la demande est émise, le site attend son entrée en section critique. Dès son entrée, c'est-à-dire dès que **checkStatus()** déclenche **enterCs()**, qui envoie grâce à **bas.send()** un message à **Bas**, celui-ci va exécuter la commande entrée dans **doAction()**. Le fichier est modifié avec la méthode **edit()** enclenchée par **doAction()**
+- Après modification du document, **Bas** envoie un message au réseau avec **sendMessageFromBas()** pour leur indiquer ce qui a été modifié. Les différents sites détectent alors un nouveau type de message **EditMessage** indiquant une modification du fichier partagé, et en réaction lancent la méthode **doAction()** avec la commande en paramètre. La modification est alors propagée. 
 
 Pour plus de précision sur les méthodes implémentées, voir la [documentation](#BasClass) sur la classe Bas.
 
 Concernant les méthodes ajoutées dans Net, on a: 
-- <u>sendToBas(self, message)</u>: fonction qui fait appel à bas.send(self, message). Permet la transmission de message de Net à Bas,
+- <u>sendToBas(self, message)</u>: fonction qui fait appel à bas.send(self, message). Permet la transmission de messages de Net à Bas,
 - <u>sendMessageFromBas(self, message)</u>: fonction qui transmet les Edit Messages aux autres sites en faisant appel à writeMessage().
 
 Concernant les classes ajoutées, on a:
-- <u>BasState ([utils.py](/utils.py))</u>: Classe permettant d'instancier des états de Bas, et de les envoyer dans les instances State lors de sauvegarde.
+- <u>BasState ([utils.py](/utils.py))</u>: Classe permettant d'instancier des états de Bas, et de les envoyer dans les instances State lors des sauvegardes.
 - <u>EditMessage ([message.py](/message.py))</u>: Messages permettant la transmission de commandes dans le réseau.
 - <u>Command ([bas.py](/bas.py))</u>: Classe permettant d'instancier les commandes réalisées par les applications de base.
 
@@ -176,7 +176,7 @@ On retrouve dans ce projet 4 fichiers :
 - [net.py](/net.py) - Celui-ci contient l'ensemble de la classe Net, avec ses attributs et méthodes:
     - **Attributs** :
         - <u>netID</u> : Identifiant du site,
-        - <u>nbSite</u>: Nombre de site sur l'ensemble du réseau,
+        - <u>nbSite</u>: Nombre de sites sur l'ensemble du réseau,
         - <u>bas</u> : Application BAS affiliée au site,
         - <u>stamp</u> : Horloge logique du site,
         - <u>networkState</u> : Tableau avec une case par site représentant leur état pour l'algorithme de la file d'attente ("R": Requête, "A" : Accusé de réception, "L" : Libéré), 
@@ -193,18 +193,18 @@ On retrouve dans ce projet 4 fichiers :
     - **Méthodes**
         - <u>logger(self, logContent)</u> : Méthode d'affichage, permettant ainsi l'affichage du fonctionnement de l'algorithme sur le terminal,
         - <u>readMessage(self)</u><a class="anchor" id="readMessage"></a> : Méthode permettant, en étant lancée dans un thread, de lire l'ensemble des lignes inscrites sur stdin et de les mettre dans la file de messages,
-        - <u>writeMessage(self, message)</u><a class="anchor" id="writeMessage"></a> : Méthode permettant de mettre les message à envoyer dans la file de messages,
+        - <u>writeMessage(self, message)</u><a class="anchor" id="writeMessage"></a> : Méthode permettant de mettre les messages à envoyer dans la file de messages,
         - <u>centurion(self)</u><a class="anchor" id="centurion"></a> : Méthode permettant d'officier le rôle de centurion (référence à l'armée de César), en dépilant séquentiellement chaque message de la file. En fonction de la première case du message, le centurion effectue une action différente : 
             - <u>"send"</u> : Envoie le contenu du message au site voisin,
-            - <u>"process"</u> : Traite le message, dans le cas où celui-ci le concerne (s'il est le destinataire du message), et le renvoit si le message concerne tous les sites, ou s'il n'est pas le destinataire du message. 
+            - <u>"process"</u> : Traite le message, dans le cas où celui-ci le concerne (s'il est le destinataire du message), et le renvoie si le message concerne tous les sites, ou s'il n'est pas le destinataire du message. 
         - <u>initSnapshot(self)</u> : Méthode permettant d'initialiser la demande de sauvegarde et de la transmettre au réseau.
         - <u>sendMessageFromBas(self, message)</u> : Méthode permettant de diffuser un message reçu de BAS.
         - <u>sendToBas(self, message)</u> : Méthode permettant d'envoyer un message à BAS.
         - <u>basCsRequest(self)</u> : Envoie une requête de Section critique au réseau, et inscrit cette demande dans le tableau networkState.
         - <u>basCsRelease(self)</u> : Envoie un message de libération de la section critique au réseau et inscrit la libération dans le tableau networkState.
         - <u>checkState(self)</u> : Vérifie si le site peut entrer en section critique, en fonction de l'état du réseau dans l'algorithme de file d'attente.
-        - <u>enterCs(self)</u> : Permet d'entrer en seciton critique, et envoie un message à Bas pour signaler l'entrée en section critique,
-        - <u>receiveExternalMessage(self, msgReceived)</u> : méthode permettant la réception de message. En fonction du corps du messages.  
+        - <u>enterCs(self)</u> : Permet d'entrer en section critique, et envoie un message à Bas pour signaler l'entrée en section critique,
+        - <u>receiveExternalMessage(self, msgReceived)</u> : méthode permettant la réception de message. En fonction du corps du message.  
 - [bas.py](/bas.py) - Ce fichier contient l'ensemble de la Classe **Bas** et la classe **Command**, avec ses attributs et méthodes : 
 
 - **Bas** <a class="anchor" id="BasClass"></a>
@@ -218,11 +218,11 @@ On retrouve dans ce projet 4 fichiers :
         - <u>commandEntry</u>: Instance de la zone d'entrée de texte.
         - <u>commandButton</u>: Instance contenant le bouton de modification du fichier.
     - **Méthodes** : 
-        - <u>send(self, msg)</u>: Méthode permettant de lancer une instruction, contenu dans le paramètre msg, qui est soit un retour de net suite à une demande de section critique, soit une demande d'exécution reçue par NET (suite à la modification par un autre site par exemple).
+        - <u>send(self, msg)</u>: Méthode permettant de lancer une instruction, contenue dans le paramètre msg, qui est soit un retour de net suite à une demande de section critique, soit une demande d'exécution reçue par NET (suite à la modification par un autre site par exemple).
         - <u>action(self)</u>: Méthode permettant d'émettre, si l'on appuie sur le bouton "Modifier", de lancer une demande de section critique sur le réseau, et de désactiver les boutons en attendant la réponse.
-        - <u>doAction(self)</u>: Méthode permettant de lancer la commande contenue dans le champs de texte. Après exécution, les boutons sont à nouveau cliquable.
-        - <u>edit(self, command)</u>: Méthode permettant la modification du champs texte "printTextWidget" suite à la réception d'une commande ici en paramètre.
-        - <u>snapshot</u>: Méthode lancée après appuie sur le bouton "Request a snapshot", lance la fonction associé de la classe Net.
+        - <u>doAction(self)</u>: Méthode permettant de lancer la commande contenue dans le champs de texte. Après exécution, les boutons sont à nouveau cliquables.
+        - <u>edit(self, command)</u>: Méthode permettant la modification du champ texte "printTextWidget" suite à la réception d'une commande ici en paramètre.
+        - <u>snapshot</u>: Méthode lancée après appui sur le bouton "Request a snapshot", lance la fonction associée de la classe Net.
         - <u>run(self)</u>: Méthode permettant de lancer l'affichage de l'interface TKinter.
 - **Command**
     - **Attributs** :
@@ -236,25 +236,25 @@ On retrouve dans ce projet 4 fichiers :
 - [utils.py](/utils.py) - Ce fichier contient l'ensemble des classes utilitaires qui sont : 
     - **VectClock**<a class="anchor" id="#VectClock"></a>
         - **Attributs** :
-            - <u>netID</u>: Identifiant du site visée par l'instance d'horloge vectorielle .
-            - <u>nbSite</u>: Nombre de site sur le réseau.
+            - <u>netID</u>: Identifiant du site visé par l'instance d'horloge vectorielle .
+            - <u>nbSite</u>: Nombre de sites sur le réseau.
             - <u>clockArray</u>: Valeur de l'horloge vectorielle
         - **Méthodes** :
             - <u>incr(self, otherClock)</u>: Méthode permettant d'incrémenter l'horloge vectorielle en prenant en compte celle d'un autre site.
             - <u>__str__(self)</u>: Méthode "override" permettant d'afficher une horloge vectorielle au format "netId#nbSite#strClockArray".
-            - <u>fromString(cls, stringToConvert)</u>: Méthode statique retournant une instance d'Horloge vectorielle à partir d'une chaîne de caractère.
+            - <u>fromString(cls, stringToConvert)</u>: Méthode statique retournant une instance d'Horloge vectorielle à partir d'une chaîne de caractères.
      - **BasState** : Classe permettant d'exprimer l'état d'une application BAS
         - **Attributs** :
             - <u>text</u>: Contenu du fichier partagé par les sites au moment de la capture.
             - <u>command</u>: Contenu de la zone de texte permettant le lancement de commandes au moment de la capture.
             - <u>isRequestingCs</u>: Est-ce que l'application était en demande de section critique au moment de la capture ?
         - **Méthodes** :
-            - <u>fromString(cls, stringToConvert)</u>: Méthode permettant de créer une instance de BasState à partir d'une chaîne de caractère. 
+            - <u>fromString(cls, stringToConvert)</u>: Méthode permettant de créer une instance de BasState à partir d'une chaîne de caractères. 
      - **State** : Classe permettant d'exprimer les états locaux des sites
         - **Attributs** :
             - <u>messageAssess</u>: Bilan des messages en transit au moment de la capture.
             - <u>netID</u>: Identifiant du site concerné par la capture.
-            - <u>nbSite</u>: Nombre de site dans le réseau.
+            - <u>nbSite</u>: Nombre de sites dans le réseau.
             - <u>vectClock</u>: Horloge vectorielle du site au moment de la capture.
             - <u>basState</u>: État de l'application Bas liée au site. 
         - **Méthodes** :
@@ -272,11 +272,11 @@ On retrouve dans ce projet 4 fichiers :
     - **Méthodes**
         - <u>toPrepost(self)</u>: Méthode qui passe l'attribut "isPrepost" à True et retourne l'instance de Message.
         - <u>setColor(self, color)</u>: Méthode setter de l'attribut "color". 
-        - <u>fromString(cls, s)</u>: Méthode créant une instance de Message à partir d'une chaîne de caractère.
+        - <u>fromString(cls, s)</u>: Méthode créant une instance de Message à partir d'une chaîne de caractères.
     Il existe dans ce projet différents types de messages héritant de la classe Message ou de BroadcastMessage: 
-        - <u>BroadcastMessage(Message)</u>: Messages ayant pour but d'être envoyé à tout le monde. 
+        - <u>BroadcastMessage(Message)</u>: Messages ayant pour but d'être envoyés à tout le monde. 
         - <u>EditMessage(BroadcastMessage)</u>: Messages permettant de transmettre des messages permettant de modifier le contenu du fichier partagé.
-        - <u>LockRequestMessage(BroadcastMessage)</u>:  Messages ayant comme but d'envoyer des requêtes d'entrées en section critiques. 
+        - <u>LockRequestMessage(BroadcastMessage)</u>:  Messages ayant comme but d'envoyer des requêtes d'entrées en section critique. 
         - <u>AckMessage(Message)</u>: Messages ayant pour but d'envoyer des accusés de réception.
         - <u>ReleaseMessage(BroadcastMessage)</u>: Messages ayant pour but d'envoyer des déclaration de libération de section critique.
         - <u>StateMessage(BroadcastMessage)</u>: Messages ayant pour but de transmettre des États. 
