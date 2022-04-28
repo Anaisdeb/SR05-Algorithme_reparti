@@ -16,8 +16,8 @@
 ## Présentation  <a class="anchor" id="Présentation"></a>
 
 Ce projet a été réalisé dans le cadre de l'enseignement SR05 en Printemps 2022. Celui-ci concerne l'implémentation d'un algorithme réparti qui:
-- Dans un premier temps, combine l'algorithme de sauvegarde et de file d'attente. Cela permet de capturer le réseau à certains moments, et de régir les demandes d'entrées en section entre les différents sites. 
-- Dans un second temps, permet l'accès à un fichier en lecture/écriture lors d'une section critique.
+- Dans un premier temps, combine l'algorithme de sauvegarde et de file d'attente. Cela permet de capturer le réseau à certains moments, et de régir les demandes d'entrées en section critique entre les différents sites. 
+- Dans un second temps, permet l'accès à un fichier en lecture/écriture lors d'une entrée en section critique.
 
 ## Installation et Lancement du projet  <a class="anchor" id="InstallationPresentation"></a>
 
@@ -27,7 +27,7 @@ Dans un premier temps, il est nécessaire de cloner le projet sur Gitlab :`
 
 Si le compte possède une clé SSH : 
 ```
-git clone git@gitlab.utc.fr:rdelaage/sr05-projet.gi`
+git clone git@gitlab.utc.fr:rdelaage/sr05-projet.git
 ```
 Sinon :
 ```
@@ -40,7 +40,7 @@ Pour lancer le projet, il est nécessaire de créer dans un premier temps un pip
 ```
 mkfifo /tmp/f
 ```
-Ensuite, dans le dossier du projet, il faut lancer le programme net.py 3 fois sur la même ligne de commande pour avoir accès à l'interface d'utilisation du projet. Il est à noter qu'il faut nommer chaque site avec un numéro en paramètre, à partir de 0 et consécutifs. On aurait avec 3 sites par exemple :
+Ensuite, dans le dossier du projet, il faut lancer le programme net.py n fois sur la même ligne de commande pour avoir accès à l'interface d'utilisation du projet avec n sites. Il faudra préalablement mettre à n la variable "nbSite" ligne 19 de net.py qui par défaut est à 3. Il est à noter qu'il faut nommer chaque site avec un numéro en paramètre, à partir de 0 et consécutifs. On aurait avec 3 sites par exemple :
 ```
 ./net.py 0 < /tmp/f | ./net.py 1 | ./net.py 2 > /tmp/f
 
@@ -50,25 +50,26 @@ python3 ./net.py 0 < /tmp/f |python3 ./net.py 1 |python3 ./net.py 2 > /tmp/f
 ```
 
 Une fois les fenêtres ouvertes, on peut alors modifier le contenu textuel (qui contient au départ les explications des commandes).
-Pour cela on peut entrer des commandes au format suivant : ```a;b;c```
-- ```a``` est ici le numéro de ligne concernée,
-- ```b``` est la commande à exécuter, on a ici :
-  - ```s``` pour substituer le contenu de la ligne par le contenu définit dans ```c```
-  - ```a``` pour ajouter une ligne après la ligne concernée avec le contenu défini dans ```c```
-  - ```d``` pour supprimer le contenu d'une ligne. Le contenu de ```c``` n'a pas d'importance dans ce cas. 
-- ```c ``` est le contenu du texte faisant l'objet de la commande. 
+Pour cela on peut entrer des commandes au format suivant : ```x;y;z```
+- ```x``` est ici le numéro de ligne concernée,
+- ```y``` est la commande à exécuter, on a ici :
+  - ```s``` pour substituer le contenu de la ligne x par le contenu définit dans ```z```
+  - ```d``` pour supprimer la ligne x. Le contenu de ```z``` n'a pas d'importance dans ce cas. 
+  - ```a``` pour ajouter une ligne après la ligne x avec le contenu défini dans ```z```
+  - ```i``` pour insérer une ligne avant la ligne x avec le contenu défini dans ```z```
+- ```z ``` est le contenu du texte faisant l'objet de la commande. 
 
 ## Principe de fonctionnement <a class="anchor" id="Principe_de_fonctionnement"></a>
 
-Le projet combine l'algorithme de l'activité 4, avec celui de la file d'attente et de sauvegarde. Le réseau est ici un anneau, permettant ainsi de ne pas avoir à implémenter d'algorithme de création d'anneau de contrôle.
+Le projet combine l'algorithme de l'activité 4, avec celui de la file d'attente et de sauvegarde. La topologie du réseau est ici un **anneau**, permettant ainsi de ne pas avoir à implémenter d'algorithme de création d'anneau de contrôle.
 
 ### Activité 4 <a class="anchor" id="Activité_4"></a>
 
-On retrouve ici la solution 6 de l'activité 4 qui consiste en l'implémentation d'une file de message gérée par un thread "centurion", et remplie d'une part par un thread de lecture dans le flux **stdin**, et de l'autre par le site voisin écrivant sur son flux **stdout** connecté à l'entrée du site. 
+On retrouve ici la solution 6 de l'activité 4 qui consiste en l'implémentation d'une file de messages gérée par un thread "centurion", et remplie d'une part par un thread de lecture dans le flux **stdin**, et de l'autre par le site voisin écrivant sur son flux **stdout** connecté à l'entrée du site. 
 
-Étant donné que les messages sont stockés dans une file, on a donc un traitement séquentiel et FIFO de ceux-ci. Concernant la structure de celle-ci et des messages, on a dans un premier temps choisi que chaque objet de la file est un tableau de 2 cases :
+Étant donné que les messages sont stockés dans une file, on a donc un traitement **séquentiel** et **FIFO** de ceux-ci. Concernant la structure de celle-ci et des messages, on a dans un premier temps choisi que chaque objet de la file est un tableau de 2 cases :
 - La première case est un mot qui définit quelle action faire avec le message. Si c'est "send", le message sera envoyé, si c'est "process", le message sera traité si le site est destinataire de ce message. 
-- La seconde case est le contenu du message sous forme d'une chaîne de caractères. Il est nécessaire alors avant de le traiter de créer une instance de message à partir de cette chaîne de caractères. Le format des messages est presque identique à celle de Airplug, c'est-à-dire **"who\~fromWho\~messageType\~color\~isPrepost\~vectClock\~what"**. Nous avons ajouté le champs **isPrepost** et **vectClock** dans le but de ne pas avoir à le faire dans le champs **what**.
+- La seconde case est le contenu du message sous forme d'une chaîne de caractères. Il est nécessaire alors avant de le traiter de créer une instance de message à partir de cette chaîne de caractères. Le format des messages est presque identique à celui de Airplug, c'est-à-dire **"who\~fromWho\~messageType\~color\~isPrepost\~vectClock\~what"**. Nous avons ajouté les champs **isPrepost** et **vectClock** dans le but de ne pas avoir à le faire dans le champs **what**.
 
 
 Concernant les différents acteurs de cet algorithme, on retrouve deux threads et une fonction permettant d'assurer la réception, l'envoi et le traitement des messages :
@@ -83,12 +84,12 @@ Concernant cet algorithme, on a implémenté l'algorithme disponible sur moodle 
 Pour cela, il a fallu adapter le code de l'activité 4 en ajoutant des attributs, méthodes et classes.
 -  En effet, il a fallu dans un premier temps ajouter des attributs dans la classe **Net** qui sont 
     -  <u>stamp</u> : Horloge logique du site,
-    -  <u>networkState</u> : État des requêtes de section critiques dans le réseaux,
+    -  <u>networkState</u> : État des requêtes de section critique dans le réseau,
 - Dans un second temps ont été implémentées des méthodes permettant de gérer les requêtes et entrées en section critique : 
     - <u>basCsRequest(self)</u> : Envoie de requête d'entrée en section critique,
     - <u>basCsRelease(self)</u> : Envoie de déclaration de libération de section critique,
     - <u>checkState(self)</u> : Vérification de l'état du Site, pour éventuellement entrer en section critique,
-    - <u>enterCs(self)</u> : Méthode d'entrée en section critique,
+    - <u>enterCs(self)</u> : Entrée en section critique,
     - <u>receiveExternalLockRequestMessage(self, msgReceived)</u> : Méthode de réaction face à un message de requête d'entrée en section critique,
     - <u>receiveExternalReleaseMessage(self, msgReceived)</u> : Méthode de réaction face à un message de déclaration de libération de section critique,
     - <u>receiveExternalAckMessage(self, msgReceived)</u> : Méthode de réaction face à un message d'accusé de réception
@@ -103,11 +104,11 @@ Dès lors que ces différents outils ont été définis, il a suffit de déroule
 ### Algorithme de sauvegarde <a class="anchor" id="Algorithme_de_sauvegarde"></a>
 
 Concernant l'algorithme de sauvegarde, il y a eu des ajouts comme dans l'algorithme de file d'attente. 
-- En effet des attributs ont été ajoutés sur la classe Net, la classe State et Message: 
+- En effet des attributs ont été ajoutés sur les classes Net, State et Message: 
     - <u>initiatorSave (Net)</u>: booléen indiquant si le site est à l'initiative de la sauvegarde.
     - <u>messageAssess(State)</u> Bilan des messages en transit dans le réseau.
     - <u>globalState (Net)</u>: Dernier enregistrement de l'état global par le site,
-    - <u>nbWaitingMessage (Net)</u> et <u>NbWatingState</u>: Nombre de messages et d'états attendus par le site,
+    - <u>nbWaitingMessage</u> et <u>NbWaitingState (Net)</u>: Nombre de messages et d'états attendus par le site,
     - <u>vectClock(Net et Message)</u>: Valeur de l'horloge vectorielle pour le message ou l'état.
 - Ensuite, des méthodes ont été ajoutées : 
     - <u>initSnapshot(self)</u>: Méthode d'initialisation de la sauvegarde par un site,
