@@ -162,7 +162,13 @@ Concernant les classes ajoutées, on a:
 ```
  - On peut alors observer la suppression de la troisième ligne dans le contenu textuel. 
 
-###Quaa
+### Quatrième scénario : Lancement d'une sauvegarde
+- On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
+- On lance alors les commandes du premier et second scénario, et on clique ensuite sur le bouton ```Request a snapshot```. On observe alors que le fichier save a été créé et rempli avec différentes lignes. Celles-ci correspondent aux états des 3 sites qui ont été démarrés. 
+- Le format de chaque état est 
+```
+s°s°s°e#e#e#e#e
+```
 
 ## Documentation <a class="anchor" id="Documentation "></a>
 
