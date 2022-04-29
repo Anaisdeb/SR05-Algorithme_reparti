@@ -99,7 +99,7 @@ Pour cela, il a fallu adapter le code de l'activité 4 en ajoutant des attributs
     - <u>AckMessage</u> : Classe pour les messages d'accusés de réception,
     - <u>ReleaseMessage</u> : Classe pour les messages de libération de section critique.
 
-Dès lors que ces différents outils ont été définis, il a suffit de dérouler l'algorithme défini ci-contre, notamment en définissant
+Dès lors que ces différents outils ont été définis, il a suffit de dérouler l'algorithme défini <a href="https://moodle.utc.fr/pluginfile.php/172574/mod_resource/content/1/5-POLY-file-attente-2018.pdf">ci-contre</a>.
 
 ### Algorithme de sauvegarde <a class="anchor" id="Algorithme_de_sauvegarde"></a>
 
