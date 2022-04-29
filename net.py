@@ -16,7 +16,7 @@ from messages import (
 from bas import Bas
 
 appID = sys.argv[1]
-nbSite = 3
+nbSite = 4
 
 """ Class
     Net: class that represents netSites
@@ -61,12 +61,14 @@ class Net:
     '''
         logger(self, logContent) --> print logContent in stderr with flush option,
     '''
+
     def logger(self, logContent):
         print(f"From site {self.netID}: {logContent}", file=sys.stderr, flush=True)
 
     '''
         readMessage(self) --> read lines from stdin and put them into message Queue, in order to be processed, 
     '''
+
     def readMessage(self):
         try:
             for line in sys.stdin:
@@ -75,7 +77,7 @@ class Net:
                     if str(readMessage.fromWho) != str(self.netID):
                         self.messages.put(("process", readMessage))
                     else:
-                        #the message has already been received but will not be processed because it has already gone around the ring
+                        # the message has already been received but will not be processed because it has already gone around the ring
                         self.state.messageAssess -= 1
         except IOError:
             self.logger("End of stdin")
@@ -83,6 +85,7 @@ class Net:
     '''
         writeMessage(self, message) --> put message into message Queue, in order to be sent,
     '''
+
     def writeMessage(self, message):  # écrire message sur stdout
         message.setColor(self.color)
         self.messages.put(("send", message))
@@ -92,8 +95,9 @@ class Net:
             if "send" --> send message to the next neighbour
             if "process" --> process the message if it concerns this netSite
     '''
+
     def centurion(self):
-        while not(self.messages.empty()) or self.readMessageThread.is_alive():
+        while not (self.messages.empty()) or self.readMessageThread.is_alive():
             item = self.messages.get()
             if item[0] == "send":
                 self.logger(f"The centurion spreads {item[1]} on the Ring")
@@ -106,19 +110,23 @@ class Net:
                     self.state.messageAssess -= 1
                     self.receiveExternalMessage(message)
                 elif str(message.who) == "ALL" and str(message.fromWho) != str(self.netID):
-                    self.logger(f"The centurion process and spreads {item[1]} on the Ring")
-                    #don't change messageAsses since message is processed then send
-                    print(message, file=sys.stdout, flush=True)
-                    self.receiveExternalMessage(message)
+                    if not self.initiatorSave:
+                        self.logger(f"The centurion process and spreads {item[1]} on the Ring")
+                        # don't change messageAsses since message is processed then send
+                        print(message, file=sys.stdout, flush=True)
+                        self.receiveExternalMessage(message)
+                    else:
+                        self.receiveExternalMessage(message)
                 else:
                     self.logger(f"The centurion spreads {item[1]} on the Ring")
-                    #don't change messageAsses since message is not for us
+                    # don't change messageAsses since message is not for us
                     print(message, file=sys.stdout, flush=True)
 
     '''
         initSnapshot(self) --> 
             initialize snapshot on the netSite concerned, and send request to neighbours in the network
     '''
+
     def initSnapshot(self):
         self.logger("Initialize snapshot")
         self.color = "red"
@@ -126,7 +134,8 @@ class Net:
         self.globalState.append(copy.deepcopy(self.state))
         self.nbWaitingState = self.nbSite - 1
         self.nbWaitingMessage = self.state.messageAssess
-        self.logger(f"Waiting {self.nbWaitingState} states and {self.nbWaitingMessage} prepost messages before finishing snapshot")
+        self.logger(
+            f"Waiting {self.nbWaitingState} states and {self.nbWaitingMessage} prepost messages before finishing snapshot")
         request = SnapshotRequestMessage(self.netID, self.state.vectClock)
         request.setColor("red")
         self.writeMessage(request)
@@ -134,6 +143,7 @@ class Net:
     '''
         sendMessageFromBas(self, message) --> spread message received from BAS
     '''
+
     def sendMessageFromBas(self, message):
         self.logger("Send message received from BAS")
         self.writeMessage(message)
@@ -141,6 +151,7 @@ class Net:
     '''
         sendToBas(self, message) --> send message to BAS (TODO)
     '''
+
     def sendToBas(self, message):
         self.logger(f"{self.netID} send {message} to BAS")
         self.bas.send(message)
@@ -148,6 +159,7 @@ class Net:
     '''
         basCsRequest(self) --> send Critical Section request message to the network
     '''
+
     def basCsRequest(self):
         self.stamp += 1
         msg = LockRequestMessage(self.netID, self.state.vectClock, self.stamp)
@@ -157,17 +169,19 @@ class Net:
     '''
         basCsRelease(self) --> send Critical Section release message to the network
     '''
+
     def basCsRelease(self):
         self.stamp += 1
         msg = ReleaseMessage(self.netID, self.state.vectClock, self.stamp)
         self.networkState[self.netID] = ('L', self.stamp)
         self.writeMessage(msg)
-        
+
     '''
         checkState(self) --> check if netSite's state allows itself to enter in Critical Section, i.e.
             - Site is requesting for getting Critical Section access,
             - Site's request is the oldest done,
     '''
+
     def checkState(self):
         siteState = self.networkState[self.netID][0]
         if siteState == 'R':
@@ -178,6 +192,7 @@ class Net:
     '''
         enterCs(self) --> Enter into Critical Section, then send release message to the network
     '''
+
     def enterCs(self):
         self.logger("Entry in the critical section")
         self.sendToBas("CsOk")
@@ -186,6 +201,7 @@ class Net:
     '''
         receiveExternalMessage(self, msgReceived) --> receive message from network, and act according to the type
     '''
+
     def receiveExternalMessage(self, msgReceived):
         self.state.vectClock.incr(msgReceived.vectClock)
         if msgReceived.messageType == "StateMessage":
@@ -200,12 +216,13 @@ class Net:
             self.receiveExternalPrepostMessage(msgReceived)
         else:
             self.receiveExternalNormalMessage(msgReceived)
-            
+
     '''
         receiveExternalStateMessage(self, msgReceived) --> if netSite is the initiator of the snapshot, if it's the last remaining message, 
                                                         finish snapshot and write it into a file
                                                         if it's not the initiator, transmit it to next neighbor 
     '''
+
     def receiveExternalStateMessage(self, msgReceived):
         self.logger("Receive STATE message")
         if self.initiatorSave:
@@ -213,20 +230,25 @@ class Net:
             self.globalState.append(etatDistant)
             self.nbWaitingState -= 1
             self.nbWaitingMessage += etatDistant.messageAssess
-            self.logger(f"Waiting {self.nbWaitingState} states and {self.nbWaitingMessage} prepost messages before finishing snapshot")
+            self.logger(
+                f"Waiting {self.nbWaitingState} states and {self.nbWaitingMessage} prepost messages before finishing snapshot")
             if self.nbWaitingMessage == 0 and self.nbWaitingState == 0:
                 self.logger("Finishing snapshot")
+                saveout = sys.stdout
                 with open("save.txt", "w") as fic:
                     for etat in self.globalState:
                         fic.write(str(etat) + "\n")
-                exit(0)
+                    fic.close()
+                sys.stdout = saveout
+                self.initiatorSave = False
         else:
             self.logger("Received STATE message, not initiator, resend it")
             self.writeMessage(msgReceived)
-    
+
     '''
         receiveExternalLockRequestMessage(self, msgReceived) --> save Request into networkState, send an ACK, then check state of the netSite
     '''
+
     def receiveExternalLockRequestMessage(self, msgReceived):
         self.logger("Receive LOCK REQUEST message")
         fromWhoStamp = int(msgReceived.what)
@@ -235,20 +257,22 @@ class Net:
         ackMessage = AckMessage(msgReceived.fromWho, self.netID, self.state.vectClock, self.stamp)
         self.writeMessage(ackMessage)
         self.checkState()
-    
+
     '''
         receiveExternalReleaseMessage(self, msgReceived) --> release Request in networkState, then check state of the netSite,
     '''
+
     def receiveExternalReleaseMessage(self, msgReceived):
         self.logger("Receive Release message")
         fromWhoStamp = int(msgReceived.what)
         self.stamp = max(self.stamp, fromWhoStamp) + 1
         self.networkState[int(msgReceived.fromWho)] = ('L', fromWhoStamp)
         self.checkState()
-            
+
     '''
         receiveExternalAckMessage(self, msgReceived) --> if no Request is registered for this source, save the ACK into networkState, then check state of the netSite
     '''
+
     def receiveExternalAckMessage(self, msgReceived):
         self.logger("Receive ACK message")
         fromWhoStamp = int(msgReceived.what)
@@ -256,10 +280,11 @@ class Net:
         if self.networkState[int(msgReceived.fromWho)][0] != 'R':
             self.networkState[int(msgReceived.fromWho)] = ('A', fromWhoStamp)
         self.checkState()
-    
+
     '''
         receiveExternalPrepostMessage(self, msgReceived) --> normal message with "isPrepost" at True : same as State Message
     '''
+
     def receiveExternalPrepostMessage(self, msgReceived):
         self.logger("Receive PREPOST message")
         if self.initiatorSave:
@@ -275,11 +300,12 @@ class Net:
         else:
             self.logger("Received PREPOST message, not initiator, resend it")
             self.writeMessage(msgReceived)
-    
+
     '''
         receiveExternalNormalMessage(self, msgReceived) --> if message is red and netSite white, turn netSite into red and turn into SNAPSHOT mode,
                                                             if message is white and netsite red, pass into PREPOST mode
     '''
+
     def receiveExternalNormalMessage(self, msgReceived):
         self.logger("Receive NORMAL message")
         self.sendToBas(msgReceived.what)
@@ -291,10 +317,11 @@ class Net:
         if msgReceived.color == "white" and self.color == "red":
             self.logger("switch into PREPOST")
             self.writeMessage(msgReceived.toPrepost())
-        
+
     '''
         run(self) --> Run every thread initialized in __init__(self)
     '''
+
     def run(self):
         self.readMessageThread.start()
         self.centurionThread.start()
