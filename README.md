@@ -5,12 +5,13 @@
 2. [Installation et Lancement du projet](#InstallationPresentation) <br/>
     a. [Installation](#Installation) <br/>
     b. [Lancement](#Lancement)
-4. [Principe de fonctionnement](#Principe_de_fonctionnement) <br/>
+3. [Principe de fonctionnement](#Principe_de_fonctionnement) <br/>
     a. [Activité 4](#Activité_4) <br/>
     b. [Algorithme de file d'attente](#Algorithme_de_file_d'attente) <br/>
     c. [Algorithme de sauvegarde](#Algorithme_de_sauvegarde) <br/>
     d. [Algorithme de l'application de base](#Algorithme_de_l'application_de_base) <br/>
 5. [Scénarios de fonctionnement](#Scenario)
+4. [Complément: Ajout de la possibilité de multiples prises de snapshot](#multiple_snapshot)
 6. [Documentation](#Documentation)
 
 ## Présentation  <a class="anchor" id="Présentation"></a>
@@ -176,9 +177,16 @@ netId°nbSite°messageAssess°vectClock°basState
 - ```messageAssess``` est le bilan des messages du site en transit dans le réseau,
 - ```vectClock``` est l'horloge vectorielle du site au format ```netId#nbSite#h#h#h```, où les deux premières informations sont identiques à celles précédemment citées, et h les horloges logiques de chaque site.
 - ```basState``` est l'état de l'application de base, qui est au format ```isRequestingCs°command°encodedText```, où :
-  - ``ìsRequestingCS`` est le booléen indiquant si le site souhaite l'entrée en section critique, 
+  - ```isRequestingCS``` est le booléen indiquant si le site souhaite l'entrée en section critique, 
   - ```command``` est le contenu de la commande envoyé,
-  - ``èncodedText`` est le texte envoyé, encodé en base 64.
+  - ```encodedText``` est le texte envoyé, encodé en base 64.
+
+
+## Complément: Ajout de la possibilité de multiples prises de snapshot <a class="anchor" id="multiple_snapshot"></a>
+
+Comme vous pouvez le remarquer dans le fichier [net.py](/net.py) et [messages.py](/messages.py), nous avions commencé à réfléchir à la possibilité de prendre plusieurs snapshot dans la même instance du projet. Pour cela, nous avions donc commencé à créer un mécanisme de libération de snapshot, avec l'envoi de message de type SnapshotReleaseMessage à la fin d'un snapshot, qui réinitialiserait l'ensemble des variables affiliées au snapshot. 
+
+Cependant, nous n'avions pas conscience que cela cause également des problèmes de synchronisations entre les sites, notamment sur leur gestion des messages dans l'anneau de contrôle. Nous avons donc choisi de ne pas implémenter totalement cette fonctionnalité pour avoir un gain de temps.
 
 ## Documentation <a class="anchor" id="Documentation "></a>
 
