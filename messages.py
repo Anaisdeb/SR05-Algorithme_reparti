@@ -135,7 +135,8 @@ class StateMessage(BroadcastMessage):
 
 
 """ Class 
-    BroadcastMessage --> SnapshotRequestMessage : Message with "SnapshotRequestMessage" in type attribute, what doesn't matter
+    BroadcastMessage --> SnapshotRequestMessage : Message with "SnapshotRequestMessage" in type attribute,
+                         what doesn't matter
 """
 
 
@@ -143,6 +144,9 @@ class SnapshotRequestMessage(BroadcastMessage):
     def __init__(self, fromWho, vectClock):
         super().__init__(fromWho, "SnapshotRequestMessage", vectClock, "This is a snapshot request!")
 
+
+''' class linked to  implementation of multiple snapshot 
 class SnapshotReleaseMessage(BroadcastMessage):
     def __init__(self, fromWho, vectClock):
         super().__init__(fromWho, "SnapshotReleaseMessage", vectClock, "This is a snapshot release!")
+'''

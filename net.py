@@ -346,7 +346,7 @@ if __name__ == "__main__":
     net = Net(appID, nbSite)
     net.run()
 
-''' Partie concernant le possibilité de faire de multiples snapshot au cours de la même session
+''' Part concerning implementation of multiple snapshot
     
     # reinitializeNetAfterSnapshot(self) --> reinitialize every var linked to Snapshot Algorithm    
   
