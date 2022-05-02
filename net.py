@@ -6,13 +6,11 @@ import queue
 from utils import State
 from messages import (
     Message,
-    BroadcastMessage,
     LockRequestMessage,
     AckMessage,
     ReleaseMessage,
     StateMessage,
-    SnapshotRequestMessage,
-    SnapshotReleaseMessage
+    SnapshotRequestMessage
 )
 from bas import Bas
 
