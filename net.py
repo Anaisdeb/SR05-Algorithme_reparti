@@ -319,6 +319,37 @@ class Net:
             self.writeMessage(msgReceived.toPrepost())
 
     '''
+        receiveSnapshotRequestMessage(self, msgReceived) --> 
+            switch into SNAPSHOT mode
+    '''
+    def receiveSnapshotRequestMessage(self):
+        self.logger("Enter into SNAPSHOT mode")
+        self.color = "red"
+        self.globalState.append(self.state)
+        self.writeMessage(StateMessage(self.netID, self.state.vectClock, str(self.state)))
+
+    '''
+        reinitializeNetAfterSnapshot(self) --> reinitialize every var linked to Snapshot Algorithm    
+    '''
+
+    def reinitializeNetAfterSnapshot(self):
+        self.initiatorSave = False
+        self.color = "white"
+        self.globalState = []
+        self.nbWaitingState = 0
+        self.nbWaitingMessage = 0
+
+    '''receiveSnapshotReleaseMessage(self, message) --> if initiatorSave == False, 
+                                                        reinitialize var linked to snapshot algo and spread the message 
+                                                    --> if initiatorSave == True,
+                                                        only reinitialize var linked to snapshot algo. 
+    '''
+
+    def receiveSnapshotReleaseMessage(self, message):
+        self.reinitializeNetAfterSnapshot()
+        self.writeMessage(message)
+
+    '''
         run(self) --> Run every thread initialized in __init__(self)
     '''
 
