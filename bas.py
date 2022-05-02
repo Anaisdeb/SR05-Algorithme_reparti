@@ -3,6 +3,20 @@ from tkinter import messagebox
 from messages import EditMessage
 from utils import BasState
 
+''' Class
+    Bas : Class which represents base application
+    
+    attribute : 
+        - net : instance of Net linked to base application,
+        - state : content of Text zone in the base application,
+        - root : contains tkinter instance,
+        - requestSnapshotButton : instance of "Request a snapshot" button,
+        - printTextWidget : instance of text content of application,
+        - commandFrame / commandText : instance of Text Entry Frame and Entry for commands,
+        - commandButton : instance for "Modifier" button
+'''
+
+
 class Bas:
     def __init__(self, net):
         self.net = net
@@ -19,7 +33,8 @@ Utilisez l'entrée de commande en dessous pour le modifier :
     - 3;i;blabla
       Insère la ligne blabla avant la 3e ligne""")
         self.root = tkinter.Tk()
-        self.requestSnapshotButton = tkinter.Button(self.root, command=self.snapshot, text="Request a snapshot", foreground="red")
+        self.requestSnapshotButton = tkinter.Button(self.root, command=self.snapshot, text="Request a snapshot",
+                                                    foreground="red")
         self.requestSnapshotButton.pack()
         self.printTextWidget = tkinter.Text(self.root)
         self.printTextWidget.insert("1.0", self.state.text)
@@ -32,6 +47,12 @@ Utilisez l'entrée de commande en dessous pour le modifier :
         self.commandButton = tkinter.Button(self.commandFrame, command=self.action, text="Modifier")
         self.commandButton.pack()
 
+    '''
+        send(self, msg) --> send command to Bas (used by Net class in Net.sendToBas()) : 
+                                - if command == "CsOk" :  edit from this instance of Bas
+                                - else : edit from another instance of Bas
+    '''
+
     def send(self, msg):
         if msg == "CsOk":
             self.doAction()
@@ -42,12 +63,23 @@ Utilisez l'entrée de commande en dessous pour le modifier :
             except:
                 self.net.logger("This is not a command")
 
+    '''
+        action(self) --> method linked to "Modifier" button,
+                            ask for critical section, 
+                            get command in Text entry,
+                            disable button until the end of critical section
+    '''
+
     def action(self):
         self.net.basCsRequest()
         self.state.isRequestingCs = True
         self.state.command = self.commandEntry.get()
         self.commandButton['state'] = 'disabled'
         self.commandEntry['state'] = 'disabled'
+
+    '''
+        doAction(self) --> parse command in command entry, modify text content and spread it to other Bas instance
+    '''
 
     def doAction(self):
         try:
@@ -59,6 +91,10 @@ Utilisez l'entrée de commande en dessous pour le modifier :
         self.state.isRequestingCs = False
         self.commandButton['state'] = 'normal'
         self.commandEntry['state'] = 'normal'
+
+    '''
+        edit(self, command) --> execute command passed in parameter and write into text content, then disable it
+    '''
 
     def edit(self, command):
         modified_text = self.state.text.split("\n")
@@ -76,11 +112,33 @@ Utilisez l'entrée de commande en dessous pour le modifier :
         self.printTextWidget.insert("1.0", self.state.text)
         self.printTextWidget["state"] = "disabled"
 
+    '''
+        snapshot(self) --> Init a snapshot in net instance,
+    '''
+
     def snapshot(self):
         self.net.initSnapshot()
 
+    '''
+        run(self) --> run Tkinter with this instance of Bas
+    '''
     def run(self):
         self.root.mainloop()
+
+
+''' Class
+    Command : class which represents a command to enter in CommandEntry
+    
+    attribute : 
+        - lineNumber : line of text content concerned by the command
+        - action : action to realize on this line,
+        - text : text to put if action is replcaing or inserting
+        
+    method : 
+        - __str__(self) --> "lineNumber;action;text"
+        - parse(cls, s) --> read a string and convert it into a command (static method) 
+'''
+
 
 class Command:
     def __init__(self, lineNumber, action, text):
@@ -96,6 +154,7 @@ class Command:
         content = s.split(";")
         text = ";".join(content[2:])
         return Command(content[0], content[1], text)
+
 
 if __name__ == "__main__":
     app = Bas()
