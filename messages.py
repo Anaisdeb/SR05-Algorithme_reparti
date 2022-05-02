@@ -142,3 +142,7 @@ class StateMessage(BroadcastMessage):
 class SnapshotRequestMessage(BroadcastMessage):
     def __init__(self, fromWho, vectClock):
         super().__init__(fromWho, "SnapshotRequestMessage", vectClock, "This is a snapshot request!")
+
+class SnapshotReleaseMessage(BroadcastMessage):
+    def __init__(self, fromWho, vectClock):
+        super().__init__(fromWho, "SnapshotReleaseMessage", vectClock, "This is a snapshot release!")
