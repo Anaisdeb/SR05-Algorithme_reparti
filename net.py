@@ -11,7 +11,8 @@ from messages import (
     AckMessage,
     ReleaseMessage,
     StateMessage,
-    SnapshotRequestMessage
+    SnapshotRequestMessage,
+    SnapshotReleaseMessage
 )
 from bas import Bas
 
@@ -110,13 +111,12 @@ class Net:
                     self.state.messageAssess -= 1
                     self.receiveExternalMessage(message)
                 elif str(message.who) == "ALL" and str(message.fromWho) != str(self.netID):
-                    if not self.initiatorSave:
+                    # if the message concerns the snapshot global state, there is no need to spread it
+                    if not(message.isPrepost or message.messageType == "StateMessage"):
                         self.logger(f"The centurion process and spreads {item[1]} on the Ring")
                         # don't change messageAsses since message is processed then send
                         print(message, file=sys.stdout, flush=True)
-                        self.receiveExternalMessage(message)
-                    else:
-                        self.receiveExternalMessage(message)
+                    self.receiveExternalMessage(message)
                 else:
                     self.logger(f"The centurion spreads {item[1]} on the Ring")
                     # don't change messageAsses since message is not for us
@@ -214,6 +214,8 @@ class Net:
             self.receiveExternalAckMessage(msgReceived)
         elif msgReceived.isPrepost:
             self.receiveExternalPrepostMessage(msgReceived)
+        elif msgReceived.messageType == "SnapshotReleaseMessage":
+            self.receiveSnapshotReleaseMessage()
         else:
             self.receiveExternalNormalMessage(msgReceived)
 
@@ -234,13 +236,12 @@ class Net:
                 f"Waiting {self.nbWaitingState} states and {self.nbWaitingMessage} prepost messages before finishing snapshot")
             if self.nbWaitingMessage == 0 and self.nbWaitingState == 0:
                 self.logger("Finishing snapshot")
-                saveout = sys.stdout
                 with open("save.txt", "w") as fic:
                     for etat in self.globalState:
                         fic.write(str(etat) + "\n")
-                    fic.close()
-                sys.stdout = saveout
                 self.initiatorSave = False
+                release = SnapshotReleaseMessage(self.netID, self.state.vectClock)
+                self.writeMessage(release)
         else:
             self.logger("Received STATE message, not initiator, resend it")
             self.writeMessage(msgReceived)
@@ -296,10 +297,13 @@ class Net:
                 with open("save.txt", "w") as fic:
                     for etat in self.globalState:
                         fic.write(str(etat) + "\n")
-                exit(0)
+                self.initiatorSave = False
+                release = SnapshotReleaseMessage(self.netID, self.state.vectClock)
+                self.writeMessage(release)
         else:
             self.logger("Received PREPOST message, not initiator, resend it")
             self.writeMessage(msgReceived)
+
 
     '''
         receiveExternalNormalMessage(self, msgReceived) --> if message is red and netSite white, turn netSite into red and turn into SNAPSHOT mode,
@@ -308,7 +312,8 @@ class Net:
 
     def receiveExternalNormalMessage(self, msgReceived):
         self.logger("Receive NORMAL message")
-        self.sendToBas(msgReceived.what)
+        if msgReceived.messageType != "SnapshotRequestMessage":
+            self.sendToBas(msgReceived.what)
         if msgReceived.color == "red" and self.color == "white":
             self.logger("Enter into SNAPSHOT mode")
             self.color = "red"
@@ -317,6 +322,26 @@ class Net:
         if msgReceived.color == "white" and self.color == "red":
             self.logger("switch into PREPOST")
             self.writeMessage(msgReceived.toPrepost())
+
+    '''
+        reinitializeNetAfterSnapshot(self) --> reinitialize every var linked to Snapshot Algorithm    
+    '''
+
+    def reinitializeNetAfterSnapshot(self):
+        self.initiatorSave = False
+        self.color = "white"
+        self.globalState = []
+        self.nbWaitingState = 0
+        self.nbWaitingMessage = 0
+
+    '''receiveSnapshotReleaseMessage(self, message) --> if initiatorSave == False, 
+                                                        reinitialize var linked to snapshot algo and spread the message 
+                                                    --> if initiatorSave == True,
+                                                        only reinitialize var linked to snapshot algo. 
+    '''
+
+    def receiveSnapshotReleaseMessage(self):
+        self.reinitializeNetAfterSnapshot()
 
     '''
         run(self) --> Run every thread initialized in __init__(self)
