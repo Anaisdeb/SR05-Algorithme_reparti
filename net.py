@@ -243,8 +243,8 @@ class Net:
                     for etat in self.globalState:
                         fic.write(str(etat) + "\n")
                 self.initiatorSave = False
-                release = SnapshotReleaseMessage(self.netID, self.state.vectClock)
-                self.writeMessage(release)
+                # release = SnapshotReleaseMessage(self.netID, self.state.vectClock)
+                # self.writeMessage(release)
         else:
             self.logger("Received STATE message, not initiator, resend it")
             self.writeMessage(msgReceived)
@@ -307,8 +307,8 @@ class Net:
                     for etat in self.globalState:
                         fic.write(str(etat) + "\n")
                 self.initiatorSave = False
-                release = SnapshotReleaseMessage(self.netID, self.state.vectClock)
-                self.writeMessage(release)
+                # release = SnapshotReleaseMessage(self.netID, self.state.vectClock)
+                # self.writeMessage(release)
         else:
             self.logger("Received PREPOST message, not initiator, resend it")
             self.writeMessage(msgReceived)
