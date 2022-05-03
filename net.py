@@ -15,7 +15,7 @@ from messages import (
 from bas import Bas
 
 appID = sys.argv[1]
-nbSite = 4
+nbSite = 3
 
 """ Class
     Net: class that represents netSites
@@ -165,6 +165,9 @@ class Net:
         msg = LockRequestMessage(self.netID, self.state.vectClock, self.stamp)
         self.networkState[self.netID] = ('R', self.stamp)
         self.writeMessage(msg)
+        self.logger(f"BAS CS request received")
+        self.logger(f"local stamp {self.netID} : {self.stamp}")
+        self.logger(self.networkState)
 
     '''
         basCsRelease(self) --> send Critical Section release message to the network
@@ -175,6 +178,9 @@ class Net:
         msg = ReleaseMessage(self.netID, self.state.vectClock, self.stamp)
         self.networkState[self.netID] = ('L', self.stamp)
         self.writeMessage(msg)
+        self.logger(f"BAS CS release received")
+        self.logger(f"local stamp {self.netID} : {self.stamp}")
+        self.logger(self.networkState)        
 
     '''
         checkState(self) --> check if netSite's state allows itself to enter in Critical Section, i.e.
@@ -218,6 +224,9 @@ class Net:
         #    self.receiveSnapshotReleaseMessage()
         else:
             self.receiveExternalNormalMessage(msgReceived)
+        self.logger(f"local stamp External Message received :")
+        self.logger(f"local stamp {self.netID} : {self.stamp}")
+        self.logger(self.networkState)
 
     '''
         receiveExternalStateMessage(self, msgReceived) --> if netSite is the initiator of the snapshot, 
