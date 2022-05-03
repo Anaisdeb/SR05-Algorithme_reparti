@@ -186,7 +186,7 @@ netId°nbSite°messageAssess°vectClock°basState
 
 Comme vous pouvez le remarquer dans le fichier [net.py](/net.py) et [messages.py](/messages.py), nous avions commencé à réfléchir à la possibilité de prendre plusieurs snapshot dans la même instance du projet. Pour cela, nous avions donc commencé à créer un mécanisme de libération de snapshot, avec l'envoi de message de type SnapshotReleaseMessage à la fin d'un snapshot, qui réinitialiserait l'ensemble des variables affiliées au snapshot. 
 
-Cependant, nous n'avions pas conscience que cela cause également des problèmes de synchronisations entre les sites, notamment sur leur gestion des messages dans l'anneau de contrôle. Nous avons donc choisi de ne pas implémenter totalement cette fonctionnalité pour avoir un gain de temps.
+Cependant, nous n'avions pas conscience que cela cause également des problèmes de synchronisations entre les sites, notamment sur leur gestion des messages dans l'anneau de contrôle. Nous avons donc choisi de ne pas implémenter totalement cette fonctionnalité.
 
 ## Documentation <a class="anchor" id="Documentation "></a>
 
