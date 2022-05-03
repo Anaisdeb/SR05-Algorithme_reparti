@@ -33,6 +33,7 @@ Utilisez l'entrée de commande en dessous pour le modifier :
     - 3;i;blabla
       Insère la ligne blabla avant la 3e ligne""")
         self.root = tkinter.Tk()
+        self.root.title(f"Site n°{self.net.netID}")
         self.requestSnapshotButton = tkinter.Button(self.root, command=self.snapshot, text="Request a snapshot",
                                                     foreground="red")
         self.requestSnapshotButton.pack()
