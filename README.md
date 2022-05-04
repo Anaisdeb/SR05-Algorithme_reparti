@@ -1,28 +1,16 @@
 # SR05 - Projet de Programmation
 
-## Table des matières
-1. [Présentation](#Présentation)
-2. [Installation et Lancement du projet](#InstallationPresentation) <br/>
-    a. [Installation](#Installation) <br/>
-    b. [Lancement](#Lancement)
-3. [Principe de fonctionnement](#Principe_de_fonctionnement) <br/>
-    a. [Activité 4](#Activité_4) <br/>
-    b. [Algorithme de file d'attente](#Algorithme_de_file_d'attente) <br/>
-    c. [Algorithme de sauvegarde](#Algorithme_de_sauvegarde) <br/>
-    d. [Algorithme de l'application de base](#Algorithme_de_l'application_de_base) <br/>
-5. [Scénarios de fonctionnement](#Scenario)
-4. [Complément: Ajout de la possibilité de multiples prises de snapshot](#multiple_snapshot)
-6. [Documentation](#Documentation)
+[[_TOC_]]
 
-## Présentation  <a class="anchor" id="Présentation"></a>
+## Présentation
 
 Ce projet a été réalisé dans le cadre de l'enseignement SR05 en Printemps 2022. Celui-ci concerne l'implémentation d'un algorithme réparti qui:
 - Dans un premier temps, combine l'algorithme de sauvegarde et de file d'attente. Cela permet de capturer le réseau à certains moments, et de régir les demandes d'entrées en section critique entre les différents sites. 
 - Dans un second temps, permet l'accès à un fichier en lecture/écriture lors d'une entrée en section critique.
 
-## Installation et Lancement du projet  <a class="anchor" id="InstallationPresentation"></a>
+## Installation et Lancement du projet
 
-### Installation <a class="anchor" id="Installation"></a>
+### Installation
 
 Dans un premier temps, il est nécessaire de cloner le projet sur Gitlab :`
 
@@ -35,7 +23,7 @@ Sinon :
 git clone https://gitlab.utc.fr/rdelaage/sr05-projet.git
 ```
 
-### Lancement <a class="anchor" id="Lancement"></a>
+### Lancement
 
 Pour lancer le projet, il est nécessaire de créer dans un premier temps un pipe nommé dans /tmp (par exemple)  avec la commande suivante : 
 ```
@@ -60,11 +48,11 @@ Pour cela on peut entrer des commandes au format suivant : ```x;y;z```
   - ```i``` pour insérer une ligne avant la ligne x avec le contenu défini dans ```z```
 - ```z ``` est le contenu du texte faisant l'objet de la commande. 
 
-## Principe de fonctionnement <a class="anchor" id="Principe_de_fonctionnement"></a>
+## Principe de fonctionnement
 
 Le projet combine l'algorithme de l'activité 4, avec celui de la file d'attente et de sauvegarde. La topologie du réseau est ici un **anneau**, permettant ainsi de ne pas avoir à implémenter d'algorithme de création d'anneau de contrôle.
 
-### Activité 4 <a class="anchor" id="Activité_4"></a>
+### Activité 4
 
 On retrouve ici la solution 6 de l'activité 4 qui consiste en l'implémentation d'une file de messages gérée par un thread "centurion", et remplie d'une part par un thread de lecture dans le flux **stdin**, et de l'autre par le site voisin écrivant sur son flux **stdout** connecté à l'entrée du site. 
 
@@ -75,11 +63,11 @@ On retrouve ici la solution 6 de l'activité 4 qui consiste en l'implémentation
 
 Concernant les différents acteurs de cet algorithme, on retrouve deux threads et une fonction permettant d'assurer la réception, l'envoi et le traitement des messages :
 - Le centurion, dans un thread, va ici dépiler un objet de la file, lire la première case et décider alors ce que va être fait du contenu du message dans la seconde case. Lorsqu'il y a traitement du message, celui-ci est passé en paramètre de la fonction **receiveExternalMessage()** qui va réagir en fonction de son type. 
-- Le thread de readMessage() lit chaque message écrit sur stdin et les enregistre sur la file(voir [documentation](#readMessage)). 
-- La fonction writeMessage() permet d'envoyer le message sur le flux stdout. Le message arrive alors sur le flux stdin du site voisin de par la topologie du réseau, et donc est lu par la fonction [readMessage()](#readMessage)(voir [documentation](#writeMessage)).
+- Le thread de readMessage() lit chaque message écrit sur stdin et les enregistre sur la file(voir [documentation](#documentation)). 
+- La fonction writeMessage() permet d'envoyer le message sur le flux stdout. Le message arrive alors sur le flux stdin du site voisin de par la topologie du réseau, et donc est lu par la fonction [readMessage()](#documentation)(voir [documentation](#documentation)).
 
 
-### Algorithme de file d'attente <a class="anchor" id="Algorithme_de_file_d'attente "></a>
+### Algorithme de file d'attente
 
 Concernant cet algorithme, on a implémenté l'algorithme disponible sur moodle (<a href="https://moodle.utc.fr/pluginfile.php/172574/mod_resource/content/1/5-POLY-file-attente-2018.pdf">Ci-contre</a>).
 Pour cela, il a fallu adapter le code de l'activité 4 en ajoutant des attributs, méthodes et classes.
@@ -94,7 +82,7 @@ Pour cela, il a fallu adapter le code de l'activité 4 en ajoutant des attributs
     - <u>receiveExternalLockRequestMessage(self, msgReceived)</u> : Méthode de réaction face à un message de requête d'entrée en section critique,
     - <u>receiveExternalReleaseMessage(self, msgReceived)</u> : Méthode de réaction face à un message de déclaration de libération de section critique,
     - <u>receiveExternalAckMessage(self, msgReceived)</u> : Méthode de réaction face à un message d'accusé de réception
-- Dans une dernière mesure, nous avons ajouté des classes de message permettant de reconnaître des nouveaux types de messages (voir [documentation](#message)) : 
+- Dans une dernière mesure, nous avons ajouté des classes de message permettant de reconnaître des nouveaux types de messages (voir [documentation](#documentation)) : 
     - <u>BroadcastMessage</u> : Classe pour les messages à envoyer à tous les sites,
     - <u>LockRequestMessage</u> : Classe pour les messages de requêtes d'entrées en section critique,
     - <u>AckMessage</u> : Classe pour les messages d'accusés de réception,
@@ -102,7 +90,7 @@ Pour cela, il a fallu adapter le code de l'activité 4 en ajoutant des attributs
 
 Dès lors que ces différents outils ont été définis, il a suffit de dérouler l'algorithme défini <a href="https://moodle.utc.fr/pluginfile.php/172574/mod_resource/content/1/5-POLY-file-attente-2018.pdf">ci-contre</a>.
 
-### Algorithme de sauvegarde <a class="anchor" id="Algorithme_de_sauvegarde"></a>
+### Algorithme de sauvegarde
 
 Concernant l'algorithme de sauvegarde, il y a eu des ajouts comme dans l'algorithme de file d'attente. 
 - En effet des attributs ont été ajoutés sur les classes Net, State et Message: 
@@ -114,13 +102,13 @@ Concernant l'algorithme de sauvegarde, il y a eu des ajouts comme dans l'algorit
 - Ensuite, des méthodes ont été ajoutées : 
     - <u>initSnapshot(self)</u>: Méthode d'initialisation de la sauvegarde par un site,
 - Enfin, des classes dans utils.py et message.py on été ajoutées: 
-    - <u>VectClock</u> : classe permettant d'instancier des horloges vectorielles (voir [documentation](#VectClock)),
+    - <u>VectClock</u> : classe permettant d'instancier des horloges vectorielles (voir [documentation](#documentation)),
     - <u>SnapshotRequestMessage</u> Messages ayant comme but de transmettre les demandes de sauvegardes.
     - <u>StateMessage</u> : Messages permettant de transmettre les états des sites dans leur contenu. 
 
 Dès lors que ces outils ont été définis, l'algorithme 11 vu dans <a href="https://moodle.utc.fr/pluginfile.php/129094/mod_resource/content/1/5-poly-06-2019S.pdf">ce cours</a> a été suivi, notamment grâce au fait que la topologie du réseau est un anneau permettant de faire office d'anneau de contrôle.
 
-### Algorithme de l'application de base <a class="anchor" id="Algorithme_de_l'application_de_base "></a>
+### Algorithme de l'application de base
 
 Pour l'application de base, nous avons choisi d'implémenter un système de partage de fichier avec un fichier partagé, accessible en lecture/écriture. Pour cela : 
 - On a crée dans un premier temps une classe **Bas** dans le fichier [bas.py](/bas.py),
@@ -129,7 +117,7 @@ Pour l'application de base, nous avons choisi d'implémenter un système de part
 - Dès que la demande est émise, le site attend son entrée en section critique. Dès son entrée, c'est-à-dire dès que **checkStatus()** déclenche **enterCs()**, qui envoie grâce à **bas.send()** un message à **Bas**, celui-ci va exécuter la commande entrée dans **doAction()**. Le fichier est modifié avec la méthode **edit()** enclenchée par **doAction()**
 - Après modification du document, **Bas** envoie un message au réseau avec **sendMessageFromBas()** pour leur indiquer ce qui a été modifié. Les différents sites détectent alors un nouveau type de message **EditMessage** indiquant une modification du fichier partagé, et en réaction lancent la méthode **doAction()** avec la commande en paramètre. La modification est alors propagée. 
 
-Pour plus de précision sur les méthodes implémentées, voir la [documentation](#BasClass) sur la classe Bas.
+Pour plus de précision sur les méthodes implémentées, voir la [documentation](#documentation) sur la classe Bas.
 
 Concernant les méthodes ajoutées dans Net, on a: 
 - <u>sendToBas(self, message)</u>: fonction qui fait appel à bas.send(self, message). Permet la transmission de messages de Net à Bas,
@@ -141,24 +129,24 @@ Concernant les classes ajoutées, on a:
 - <u>Command ([bas.py](/bas.py))</u>: Classe permettant d'instancier les commandes réalisées par les applications de base.
 
 
-## Scénarios de fonctionnement <a class="anchor" id="Scenario"></a>
+## Scénarios de fonctionnement
 
 ### Premier scénario : Ajout de contenu
- - On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
+ - On lance la commande de démarrage du logiciel (donné [ci-contre](#lancement)),
  - On entre dans la section de commande le texte :
 ```
 3;a;Ligne ajoutée
 ```
  - On peut alors observer l'ajout d'une ligne après la troisième ligne avec le contenu de la dernière section "Ligne ajoutée"
 ### Second scénario : Modification de contenu
- - On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
+ - On lance la commande de démarrage du logiciel (donné [ci-contre](#lancement)),
  - On entre dans la section de commande le texte:
 ```
 3;s;Ligne modifiée
 ```
  - On observe alors que la troisième ligne a été changée en "Ligne modifiée"
 ### Troisième scénario : Suppression de contenu
- - On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
+ - On lance la commande de démarrage du logiciel (donné [ci-contre](#lancement)),
  - On entre dans la section de commande le texte:
 ```
 3;d;Ligne supprimée
@@ -166,7 +154,7 @@ Concernant les classes ajoutées, on a:
  - On peut alors observer la suppression de la troisième ligne dans le contenu textuel. 
 
 ### Quatrième scénario : Lancement d'une sauvegarde
-- On lance la commande de démarrage du logiciel (donné [ci-contre](#Lancement)),
+- On lance la commande de démarrage du logiciel (donné [ci-contre](#lancement)),
 - On lance alors les commandes du premier et second scénario, et on clique ensuite sur le bouton ```Request a snapshot```. On observe alors que le fichier save a été créé et rempli avec différentes lignes. Celles-ci correspondent aux états des 3 sites qui ont été démarrés. L'ordre des états est ici le même que celui dans lequel les sites ont été initialisés. 
 - Le format de chaque état est :
 ```
@@ -179,53 +167,54 @@ netId°nbSite°messageAssess°vectClock°basState
 - ```basState``` est l'état de l'application de base, qui est au format ```isRequestingCs°command°encodedText```, où :
   - ```isRequestingCS``` est le booléen indiquant si le site souhaite l'entrée en section critique, 
   - ```command``` est le contenu de la commande envoyé,
-  - ```encodedText``` est le texte envoyé, encodé en base 64.
+  - ```encodedText``` est le contenu du fichier partagé, encodé en base 64.
 
 
-## Complément: Ajout de la possibilité de multiples prises de snapshot <a class="anchor" id="multiple_snapshot"></a>
+## Complément: Ajout de la possibilité de multiples prises de snapshot
 
 Comme vous pouvez le remarquer dans le fichier [net.py](/net.py) et [messages.py](/messages.py), nous avions commencé à réfléchir à la possibilité de prendre plusieurs snapshot dans la même instance du projet. Pour cela, nous avions donc commencé à créer un mécanisme de libération de snapshot, avec l'envoi de message de type SnapshotReleaseMessage à la fin d'un snapshot, qui réinitialiserait l'ensemble des variables affiliées au snapshot. 
 
 Cependant, nous n'avions pas conscience que cela cause également des problèmes de synchronisations entre les sites, notamment sur leur gestion des messages dans l'anneau de contrôle. Nous avons donc choisi de ne pas implémenter totalement cette fonctionnalité.
 
-## Documentation <a class="anchor" id="Documentation "></a>
+## Documentation
 
 On retrouve dans ce projet 4 fichiers :
-- [net.py](/net.py) - Celui-ci contient l'ensemble de la classe Net, avec ses attributs et méthodes:
-    - **Attributs** :
-        - <u>netID</u> : Identifiant du site,
-        - <u>nbSite</u>: Nombre de sites sur l'ensemble du réseau,
-        - <u>bas</u> : Application BAS affiliée au site,
-        - <u>stamp</u> : Horloge logique du site,
-        - <u>networkState</u> : Tableau avec une case par site représentant leur état pour l'algorithme de la file d'attente ("R": Requête, "A" : Accusé de réception, "L" : Libéré), 
-        - <u>color</u> : Couleur du site (blanc ou rouge),
-        - <u>initiatorSave</u> : Booléen répondant à la question : Est-ce que ce site est l'initiateur de l'algorithme de sauvegarde ? 
-        - <u>messageAssess</u> : Bilan des messages en transit dans le réseau,
-        - <u>globalState</u> : État global du réseau selon ce site,
-        - <u>nbWaitingMessage</u> : Nombre de messages attendus par le site,
-        - <u>nbWaitingState</u> : Nombre d'états attendus par le site,
-        - <u>messages</u> : File contenant l'ensemble des messages en attente de traitement. Chaque message est un tableau contenant en première case l'action à effectuer sur le message, et le contenu du message dans la seconde case.
-        - <u>readMessageThread</u> : thread maintenant la fontion readMessage(),
-        - <u>centurionThread</u> : thread maintenant la fonction centurion(),
-        - <u>state</u> : État local du site,
-    - **Méthodes**
-        - <u>logger(self, logContent)</u> : Méthode d'affichage, permettant ainsi l'affichage du fonctionnement de l'algorithme sur le terminal,
-        - <u>readMessage(self)</u><a class="anchor" id="readMessage"></a> : Méthode permettant, en étant lancée dans un thread, de lire l'ensemble des lignes inscrites sur stdin et de les mettre dans la file de messages,
-        - <u>writeMessage(self, message)</u><a class="anchor" id="writeMessage"></a> : Méthode permettant de mettre les messages à envoyer dans la file de messages,
-        - <u>centurion(self)</u><a class="anchor" id="centurion"></a> : Méthode permettant d'officier le rôle de centurion (référence à l'armée de César), en dépilant séquentiellement chaque message de la file. En fonction de la première case du message, le centurion effectue une action différente : 
-            - <u>"send"</u> : Envoie le contenu du message au site voisin,
-            - <u>"process"</u> : Traite le message, dans le cas où celui-ci le concerne (s'il est le destinataire du message), et le renvoie si le message concerne tous les sites, ou s'il n'est pas le destinataire du message. 
-        - <u>initSnapshot(self)</u> : Méthode permettant d'initialiser la demande de sauvegarde et de la transmettre au réseau.
-        - <u>sendMessageFromBas(self, message)</u> : Méthode permettant de diffuser un message reçu de BAS.
-        - <u>sendToBas(self, message)</u> : Méthode permettant d'envoyer un message à BAS.
-        - <u>basCsRequest(self)</u> : Envoie une requête de Section critique au réseau, et inscrit cette demande dans le tableau networkState.
-        - <u>basCsRelease(self)</u> : Envoie un message de libération de la section critique au réseau et inscrit la libération dans le tableau networkState.
-        - <u>checkState(self)</u> : Vérifie si le site peut entrer en section critique, en fonction de l'état du réseau dans l'algorithme de file d'attente.
-        - <u>enterCs(self)</u> : Permet d'entrer en section critique, et envoie un message à Bas pour signaler l'entrée en section critique,
-        - <u>receiveExternalMessage(self, msgReceived)</u> : méthode permettant la réception de message. En fonction du corps du message.  
-- [bas.py](/bas.py) - Ce fichier contient l'ensemble de la Classe **Bas** et la classe **Command**, avec ses attributs et méthodes : 
+### [net.py](/net.py) - Classe Net
+- **Attributs** :
+    - <u>netID</u> : Identifiant du site,
+    - <u>nbSite</u>: Nombre de sites sur l'ensemble du réseau,
+    - <u>bas</u> : Application BAS affiliée au site,
+    - <u>stamp</u> : Horloge logique du site,
+    - <u>networkState</u> : Tableau avec une case par site représentant leur état pour l'algorithme de la file d'attente ("R": Requête, "A" : Accusé de réception, "L" : Libéré), 
+    - <u>color</u> : Couleur du site (blanc ou rouge),
+    - <u>initiatorSave</u> : Booléen répondant à la question : Est-ce que ce site est l'initiateur de l'algorithme de sauvegarde ? 
+    - <u>messageAssess</u> : Bilan des messages en transit dans le réseau,
+    - <u>globalState</u> : État global du réseau selon ce site,
+    - <u>nbWaitingMessage</u> : Nombre de messages attendus par le site,
+    - <u>nbWaitingState</u> : Nombre d'états attendus par le site,
+    - <u>messages</u> : File contenant l'ensemble des messages en attente de traitement. Chaque message est un tableau contenant en première case l'action à effectuer sur le message, et le contenu du message dans la seconde case.
+    - <u>readMessageThread</u> : thread maintenant la fontion readMessage(),
+    - <u>centurionThread</u> : thread maintenant la fonction centurion(),
+    - <u>state</u> : État local du site,
+- **Méthodes**
+    - <u>logger(self, logContent)</u> : Méthode d'affichage, permettant ainsi l'affichage du fonctionnement de l'algorithme sur le terminal,
+    - <u>readMessage(self)</u> : Méthode permettant, en étant lancée dans un thread, de lire l'ensemble des lignes inscrites sur stdin et de les mettre dans la file de messages,
+    - <u>writeMessage(self, message)</u>: Méthode permettant de mettre les messages à envoyer dans la file de messages,
+    - <u>centurion(self)</u> : Méthode permettant d'officier le rôle de centurion (référence à l'armée de César), en dépilant séquentiellement chaque message de la file. En fonction de la première case du message, le centurion effectue une action différente : 
+        - <u>"send"</u> : Envoie le contenu du message au site voisin,
+        - <u>"process"</u> : Traite le message, dans le cas où celui-ci le concerne (s'il est le destinataire du message), et le renvoie si le message concerne tous les sites, ou s'il n'est pas le destinataire du message. 
+    - <u>initSnapshot(self)</u> : Méthode permettant d'initialiser la demande de sauvegarde et de la transmettre au réseau.
+    - <u>sendMessageFromBas(self, message)</u> : Méthode permettant de diffuser un message reçu de BAS.
+    - <u>sendToBas(self, message)</u> : Méthode permettant d'envoyer un message à BAS.
+    - <u>basCsRequest(self)</u> : Envoie une requête de Section critique au réseau, et inscrit cette demande dans le tableau networkState.
+    - <u>basCsRelease(self)</u> : Envoie un message de libération de la section critique au réseau et inscrit la libération dans le tableau networkState.
+    - <u>checkState(self)</u> : Vérifie si le site peut entrer en section critique, en fonction de l'état du réseau dans l'algorithme de file d'attente.
+    - <u>enterCs(self)</u> : Permet d'entrer en section critique, et envoie un message à Bas pour signaler l'entrée en section critique,
+    - <u>receiveExternalMessage(self, msgReceived)</u> : méthode permettant la réception de message. En fonction du corps du message.  
 
-- **Bas** <a class="anchor" id="BasClass"></a>
+### [bas.py](/bas.py) - Classe **Bas** et classe **Command**
+
+- **Bas** 
     - **Attributs** :
         - <u>net</u>: Site NET lié à l'instance BAS,
         - <u>state</u>: Contenu du fichier partagé,
@@ -251,51 +240,51 @@ On retrouve dans ce projet 4 fichiers :
         - <u>parse(cls, s)</u>: Méthode statique permettant de créer une instance de commande à partir d'une chaîne de caractères.
 
 
-- [utils.py](/utils.py) - Ce fichier contient l'ensemble des classes utilitaires qui sont : 
-    - **VectClock**<a class="anchor" id="#VectClock"></a>
-        - **Attributs** :
-            - <u>netID</u>: Identifiant du site visé par l'instance d'horloge vectorielle .
-            - <u>nbSite</u>: Nombre de sites sur le réseau.
-            - <u>clockArray</u>: Valeur de l'horloge vectorielle
-        - **Méthodes** :
-            - <u>incr(self, otherClock)</u>: Méthode permettant d'incrémenter l'horloge vectorielle en prenant en compte celle d'un autre site.
-            - <u>__str__(self)</u>: Méthode "override" permettant d'afficher une horloge vectorielle au format "netId#nbSite#strClockArray".
-            - <u>fromString(cls, stringToConvert)</u>: Méthode statique retournant une instance d'Horloge vectorielle à partir d'une chaîne de caractères.
-     - **BasState** : Classe permettant d'exprimer l'état d'une application BAS
-        - **Attributs** :
-            - <u>text</u>: Contenu du fichier partagé par les sites au moment de la capture.
-            - <u>command</u>: Contenu de la zone de texte permettant le lancement de commandes au moment de la capture.
-            - <u>isRequestingCs</u>: Est-ce que l'application était en demande de section critique au moment de la capture ?
-        - **Méthodes** :
-            - <u>fromString(cls, stringToConvert)</u>: Méthode permettant de créer une instance de BasState à partir d'une chaîne de caractères. 
-     - **State** : Classe permettant d'exprimer les états locaux des sites
-        - **Attributs** :
-            - <u>messageAssess</u>: Bilan des messages en transit au moment de la capture.
-            - <u>netID</u>: Identifiant du site concerné par la capture.
-            - <u>nbSite</u>: Nombre de sites dans le réseau.
-            - <u>vectClock</u>: Horloge vectorielle du site au moment de la capture.
-            - <u>basState</u>: État de l'application Bas liée au site. 
-        - **Méthodes** :
-            - <u>fromString(cls, stringToConvert)</u>: Créer une instance d'État à partir d'une chaîne de caractères.
+### [utils.py](/utils.py) - Classes utilitaires 
+- **VectClock**
+    - **Attributs** :
+        - <u>netID</u>: Identifiant du site visé par l'instance d'horloge vectorielle .
+        - <u>nbSite</u>: Nombre de sites sur le réseau.
+        - <u>clockArray</u>: Valeur de l'horloge vectorielle
+    - **Méthodes** :
+        - <u>incr(self, otherClock)</u>: Méthode permettant d'incrémenter l'horloge vectorielle en prenant en compte celle d'un autre site.
+        - <u>__str__(self)</u>: Méthode "override" permettant d'afficher une horloge vectorielle au format "netId#nbSite#strClockArray".
+        - <u>fromString(cls, stringToConvert)</u>: Méthode statique retournant une instance d'Horloge vectorielle à partir d'une chaîne de caractères.
+ - **BasState** : Classe permettant d'exprimer l'état d'une application BAS
+    - **Attributs** :
+        - <u>text</u>: Contenu du fichier partagé par les sites au moment de la capture.
+        - <u>command</u>: Contenu de la zone de texte permettant le lancement de commandes au moment de la capture.
+        - <u>isRequestingCs</u>: Est-ce que l'application était en demande de section critique au moment de la capture ?
+    - **Méthodes** :
+        - <u>fromString(cls, stringToConvert)</u>: Méthode permettant de créer une instance de BasState à partir d'une chaîne de caractères. 
+ - **State** : Classe permettant d'exprimer les états locaux des sites
+    - **Attributs** :
+        - <u>messageAssess</u>: Bilan des messages en transit au moment de la capture.
+        - <u>netID</u>: Identifiant du site concerné par la capture.
+        - <u>nbSite</u>: Nombre de sites dans le réseau.
+        - <u>vectClock</u>: Horloge vectorielle du site au moment de la capture.
+        - <u>basState</u>: État de l'application Bas liée au site. 
+    - **Méthodes** :
+        - <u>fromString(cls, stringToConvert)</u>: Créer une instance d'État à partir d'une chaîne de caractères.
             
-- [messages.py](/messages.py) <a class="anchor" id="message"></a> - Ce fichier contient les différentes classes de messages, qui contiennent toutes les attributs et messages suivants:
-    - **Attributs**:
-        - <u>who</u>: destinataire du message,
-        - <u>fromWho</u>: auteur du message,
-        - <u>messageType</u>: Type du message (StateMessage, EditMessage, etc.)
-        - <u>color</u>: Couleur du site émetteur du message (Blanc ou Rouge),
-        - <u>isPrepost</u>: Booléen exprimant le fait que le message soit émis d'un site blanc et arrive sur un site rouge. 
-        - <u>vectClock</u>: Horloge vectorielle du site émetteur du message.
-        - <u>what</u>: Contenu du message.
-    - **Méthodes**
-        - <u>toPrepost(self)</u>: Méthode qui passe l'attribut "isPrepost" à True et retourne l'instance de Message.
-        - <u>setColor(self, color)</u>: Méthode setter de l'attribut "color". 
-        - <u>fromString(cls, s)</u>: Méthode créant une instance de Message à partir d'une chaîne de caractères.
-    Il existe dans ce projet différents types de messages héritant de la classe Message ou de BroadcastMessage: 
-        - <u>BroadcastMessage(Message)</u>: Messages ayant pour but d'être envoyés à tout le monde. 
-        - <u>EditMessage(BroadcastMessage)</u>: Messages permettant de transmettre des messages permettant de modifier le contenu du fichier partagé.
-        - <u>LockRequestMessage(BroadcastMessage)</u>:  Messages ayant comme but d'envoyer des requêtes d'entrées en section critique. 
-        - <u>AckMessage(Message)</u>: Messages ayant pour but d'envoyer des accusés de réception.
-        - <u>ReleaseMessage(BroadcastMessage)</u>: Messages ayant pour but d'envoyer des déclaration de libération de section critique.
-        - <u>StateMessage(BroadcastMessage)</u>: Messages ayant pour but de transmettre des États. 
-        - <u>SnapshotRequestMessage(BroadcastMessage)</u>: Messages ayant pour but d'émettre des demandes de sauvegardes.
+### [messages.py](/messages.py)  - Classes de messages
+- **Attributs**:
+    - <u>who</u>: destinataire du message,
+    - <u>fromWho</u>: auteur du message,
+    - <u>messageType</u>: Type du message (StateMessage, EditMessage, etc.)
+    - <u>color</u>: Couleur du site émetteur du message (Blanc ou Rouge),
+    - <u>isPrepost</u>: Booléen exprimant le fait que le message soit émis d'un site blanc et arrive sur un site rouge. 
+    - <u>vectClock</u>: Horloge vectorielle du site émetteur du message.
+    - <u>what</u>: Contenu du message.
+- **Méthodes**
+    - <u>toPrepost(self)</u>: Méthode qui passe l'attribut "isPrepost" à True et retourne l'instance de Message.
+    - <u>setColor(self, color)</u>: Méthode setter de l'attribut "color". 
+    - <u>fromString(cls, s)</u>: Méthode créant une instance de Message à partir d'une chaîne de caractères.
+Il existe dans ce projet différents types de messages héritant de la classe Message ou de BroadcastMessage: 
+    - <u>BroadcastMessage(Message)</u>: Messages ayant pour but d'être envoyés à tout le monde. 
+    - <u>EditMessage(BroadcastMessage)</u>: Messages permettant de transmettre des messages permettant de modifier le contenu du fichier partagé.
+    - <u>LockRequestMessage(BroadcastMessage)</u>:  Messages ayant comme but d'envoyer des requêtes d'entrées en section critique. 
+    - <u>AckMessage(Message)</u>: Messages ayant pour but d'envoyer des accusés de réception.
+    - <u>ReleaseMessage(BroadcastMessage)</u>: Messages ayant pour but d'envoyer des déclaration de libération de section critique.
+    - <u>StateMessage(BroadcastMessage)</u>: Messages ayant pour but de transmettre des États. 
+    - <u>SnapshotRequestMessage(BroadcastMessage)</u>: Messages ayant pour but d'émettre des demandes de sauvegardes.
